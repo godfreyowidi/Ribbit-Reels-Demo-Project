@@ -1,0 +1,14 @@
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.Data/obj/Debug/net9.0/RibbitReels.Data.csproj.AssemblyReference.cache
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.Data/obj/Debug/net9.0/RibbitReels.Data.GeneratedMSBuildEditorConfig.editorconfig
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.Data/obj/Debug/net9.0/RibbitReels.Data.AssemblyInfoInputs.cache
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.Data/obj/Debug/net9.0/RibbitReels.Data.AssemblyInfo.cs
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.Data/obj/Debug/net9.0/RibbitReels.Data.csproj.CoreCompileInputs.cache
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.Data/bin/Debug/net9.0/RibbitReels.Data.deps.json
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.Data/bin/Debug/net9.0/RibbitReels.Data.runtimeconfig.json
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.Data/bin/Debug/net9.0/RibbitReels.Data.dll
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.Data/bin/Debug/net9.0/RibbitReels.Data.pdb
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.Data/obj/Debug/net9.0/RibbitReels.Data.dll
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.Data/obj/Debug/net9.0/refint/RibbitReels.Data.dll
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.Data/obj/Debug/net9.0/RibbitReels.Data.pdb
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.Data/obj/Debug/net9.0/RibbitReels.Data.genruntimeconfig.cache
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.Data/obj/Debug/net9.0/ref/RibbitReels.Data.dll
