@@ -1,21 +1,23 @@
-using RibbitReels.Data;
-using HotChocolate.Data;
 using Microsoft.EntityFrameworkCore;
+using RibbitReels.Data;
+using RibbitReels.Services.Interfaces;
+using RibbitReels.Services.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add services
+builder.Services.AddControllers();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-// Register GraphQL (we'll wire up queries later)
-builder.Services
-    .AddGraphQLServer()
-    .RegisterDbContextFactory<AppDbContext>()
-    .AddQueryType(d => d.Name("Query")); // empty for now
+// Register services
+builder.Services.AddScoped<IBranchService, BranchService>();
 
 var app = builder.Build();
 
-app.MapGraphQL(); // /graphql endpoint
+// Enable endpoints
+app.MapControllers();
 
 app.Run();

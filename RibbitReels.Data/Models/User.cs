@@ -6,6 +6,6 @@ public class User
     public string Email { get; set; } = null!;
     public string DisplayName { get; set; } = null!;
 
-    public ICollection<UserProgress> Progress { get; set; } = new List<UserProgress>();
-    public ICollection<AssignedBranch> AssignedBranches { get; set; } = new List<AssignedBranch>();
+    public ICollection<LearningProgress> Progress { get; set; } = new List<LearningProgress>();
+    public ICollection<UserBranchAssignment> AssignedBranches { get; set; } = new List<UserBranchAssignment>();
 }

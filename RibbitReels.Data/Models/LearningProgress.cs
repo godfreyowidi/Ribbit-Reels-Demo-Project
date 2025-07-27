@@ -1,6 +1,6 @@
 namespace RibbitReels.Data.Models;
 
-public class AssignedBranch
+public class LearningProgress
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
@@ -9,5 +9,6 @@ public class AssignedBranch
     public Guid BranchId { get; set; }
     public Branch Branch { get; set; } = null!;
 
-    public Guid AssignedByManagerId { get; set; }
+    public List<Guid> CompletedLeafIds { get; set; } = new();
+    public DateTime? CompletedAt { get; set; }
 }
