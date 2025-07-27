@@ -1,0 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using RibbitReels.Data.Models;
+using RibbitReels.Services.Shared;
+
+namespace RibbitReels.Services.Interfaces;
+public interface ILeafService
+{
+    Task<OperationResult<Leaf>> CreateLeafAsync(Guid branchId, Leaf leaf);
+    Task<OperationResult<Leaf>> GetLeafByIdAsync(Guid id);
+    Task<OperationResult<List<Leaf>>> GetLeavesByBranchIdAsync(Guid branchId);
+    Task<OperationResult<Leaf>> UpdateLeafAsync(Guid id, Leaf updatedLeaf);
+    Task<OperationResult<bool>> DeleteLeafAsync(Guid id);
+}

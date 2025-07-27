@@ -35,9 +35,8 @@ public class BranchController : ControllerBase
         var result = await _branchService.CreateBranchAsync(branch);
 
         if (!result.IsSuccessful)
-        {
             return StatusCode(result.StatusCode, new { error = result.FailureMessage });
-        }
+
         return StatusCode(result.StatusCode, result.Value);
     }
 
@@ -47,11 +46,24 @@ public class BranchController : ControllerBase
         var result = await _branchService.GetAllBranchesAsync();
 
         if (!result.IsSuccessful)
-        {
             return StatusCode(result.StatusCode, new { error = result.FailureMessage });
-        }
 
-        return Ok(result.Value);
+        var response = result.Value.Select(branch => new BranchResponse
+        {
+            Id = branch.Id,
+            Title = branch.Title,
+            Description = branch.Description,
+            Leaves = branch.Leaves?.Select(leaf => new LeafResponse
+            {
+                Id = leaf.Id,
+                Title = leaf.Title,
+                VideoUrl = leaf.VideoUrl,
+                Order = leaf.Order
+            }).ToList() ?? new List<LeafResponse>()
+        });
+
+        return Ok(response);
+
     }
 
     [HttpGet("{id:guid}")]
@@ -60,11 +72,24 @@ public class BranchController : ControllerBase
         var result = await _branchService.GetBranchByIdAsync(id);
 
         if (!result.IsSuccessful)
-        {
             return StatusCode(result.StatusCode, new { error = result.FailureMessage });
-        }
 
-        return StatusCode(result.StatusCode, result.Value);
+        var branch = result.Value;
+        return Ok(new BranchResponse
+        {
+            Id = branch.Id,
+            Title = branch.Title,
+            Description = branch.Description,
+            Leaves = branch.Leaves?.Select(leaf => new LeafResponse
+            {
+                Id = leaf.Id,
+                Title = leaf.Title,
+                VideoUrl = leaf.VideoUrl,
+                Order = leaf.Order
+            }).ToList() ?? new List<LeafResponse>()
+
+        });
+
     }
 
     [HttpPut("{id}")]
@@ -73,9 +98,7 @@ public class BranchController : ControllerBase
         var result = await _branchService.UpdateBranchAsync(id, updatedBranch);
 
         if (!result.IsSuccessful)
-        {
             return StatusCode(result.StatusCode, new { error = result.FailureMessage });
-        }
 
         return StatusCode(result.StatusCode, result.Value);
     }
@@ -87,9 +110,7 @@ public class BranchController : ControllerBase
         var result = await _branchService.DeleteBranchAsync(id);
 
         if (!result.IsSuccessful)
-        {
             return StatusCode(result.StatusCode, new { error = result.FailureMessage });
-        }
 
         return StatusCode(result.StatusCode, new { success = result.Value });
     }

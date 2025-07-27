@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../build/RibbitReels.Api.props" />
-</Project>

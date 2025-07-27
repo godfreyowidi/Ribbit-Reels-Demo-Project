@@ -14,6 +14,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Register services
 builder.Services.AddScoped<IBranchService, BranchService>();
+builder.Services.AddScoped<ILeafService, LeafService>();
 
 var app = builder.Build();
 
