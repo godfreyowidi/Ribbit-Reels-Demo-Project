@@ -1,5 +1,6 @@
 
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RibbitReels.Data.DTOs;
 using RibbitReels.Data.Models;
@@ -19,6 +20,7 @@ public class BranchController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateBranch([FromBody] CreateBranchRequest request)
     {
         if (request == null || request.Title == null)

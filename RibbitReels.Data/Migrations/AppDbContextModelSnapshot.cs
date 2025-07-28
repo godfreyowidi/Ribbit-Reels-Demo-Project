@@ -123,9 +123,8 @@ namespace RibbitReels.Data.Migrations
                     b.Property<string>("ProviderUserId")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

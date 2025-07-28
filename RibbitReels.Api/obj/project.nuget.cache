@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "m+uXn7XyIkI=",
+  "dgSpecHash": "Rbfl5hyjqg0=",
   "success": true,
   "projectFilePath": "/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.Api/RibbitReels.Api.csproj",
   "expectedPackageFiles": [
@@ -72,11 +72,13 @@
     "/Users/godfreyowidi/.nuget/packages/microsoft.identitymodel.protocols.openidconnect/7.1.2/microsoft.identitymodel.protocols.openidconnect.7.1.2.nupkg.sha512",
     "/Users/godfreyowidi/.nuget/packages/microsoft.identitymodel.tokens/7.1.2/microsoft.identitymodel.tokens.7.1.2.nupkg.sha512",
     "/Users/godfreyowidi/.nuget/packages/microsoft.net.http.headers/2.3.0/microsoft.net.http.headers.2.3.0.nupkg.sha512",
-    "/Users/godfreyowidi/.nuget/packages/microsoft.openapi/1.4.3/microsoft.openapi.1.4.3.nupkg.sha512",
+    "/Users/godfreyowidi/.nuget/packages/microsoft.openapi/1.6.23/microsoft.openapi.1.6.23.nupkg.sha512",
     "/Users/godfreyowidi/.nuget/packages/microsoft.sqlserver.server/1.0.0/microsoft.sqlserver.server.1.0.0.nupkg.sha512",
     "/Users/godfreyowidi/.nuget/packages/microsoft.win32.registry/4.5.0/microsoft.win32.registry.4.5.0.nupkg.sha512",
     "/Users/godfreyowidi/.nuget/packages/microsoft.win32.systemevents/6.0.0/microsoft.win32.systemevents.6.0.0.nupkg.sha512",
     "/Users/godfreyowidi/.nuget/packages/mono.texttemplating/3.0.0/mono.texttemplating.3.0.0.nupkg.sha512",
+    "/Users/godfreyowidi/.nuget/packages/swashbuckle.aspnetcore.swagger/8.1.4/swashbuckle.aspnetcore.swagger.8.1.4.nupkg.sha512",
+    "/Users/godfreyowidi/.nuget/packages/swashbuckle.aspnetcore.swaggergen/8.1.4/swashbuckle.aspnetcore.swaggergen.8.1.4.nupkg.sha512",
     "/Users/godfreyowidi/.nuget/packages/system.buffers/4.6.0/system.buffers.4.6.0.nupkg.sha512",
     "/Users/godfreyowidi/.nuget/packages/system.clientmodel/1.0.0/system.clientmodel.1.0.0.nupkg.sha512",
     "/Users/godfreyowidi/.nuget/packages/system.codedom/6.0.0/system.codedom.6.0.0.nupkg.sha512",

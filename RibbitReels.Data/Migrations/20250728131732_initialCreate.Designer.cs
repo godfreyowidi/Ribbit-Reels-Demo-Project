@@ -12,8 +12,8 @@ using RibbitReels.Data;
 namespace RibbitReels.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250728091338_modifyUsers")]
-    partial class modifyUsers
+    [Migration("20250728131732_initialCreate")]
+    partial class initialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -124,12 +124,10 @@ namespace RibbitReels.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ProviderUserId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

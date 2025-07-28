@@ -31,16 +31,12 @@ public class UserService : IUserService
         var user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
 
         if (user == null)
-        {
             return OperationResult<AuthResponse>.Fail("Invalid credentials", HttpStatusCode.Unauthorized);
-        }
 
         var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash!, request.Password);
 
         if (result == PasswordVerificationResult.Failed)
-        {
             return OperationResult<AuthResponse>.Fail("Invalid credentials", HttpStatusCode.Unauthorized);
-        }
 
         var token = GenerateJwtToken(user);
 
@@ -54,33 +50,42 @@ public class UserService : IUserService
 
     private string GenerateJwtToken(User user)
     {
-        var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!);
-        var claims = new[]
+        var key = _configuration["Jwt:Key"];
+        if (string.IsNullOrWhiteSpace(key) || key.Length < 32)
+            throw new InvalidOperationException("JWT key must be at least 256 bits (32 characters)");
+
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.DisplayName),
-            new Claim(ClaimTypes.Email, user.Email)
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.Role.ToString()),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString())
         };
-
-        var creds = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
             issuer: _configuration["Jwt:Issuer"],
             audience: _configuration["Jwt:Audience"],
             claims: claims,
+            notBefore: DateTime.UtcNow,
             expires: DateTime.UtcNow.AddDays(7),
-            signingCredentials: creds
+            signingCredentials: credentials
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
 
     public async Task<OperationResult<User>> RegisterUserAsync(RegisterUserRequest request)
     {
         if (request.Password != request.ConfirmPassword)
             return OperationResult<User>.Fail("Passwords do not match");
 
-        var existing = _appDbContext.Users.FirstOrDefault(u => u.Email == request.Email);
+        var existing = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
         if (existing != null)
             return OperationResult<User>.Fail("Email already registered");
 
@@ -88,7 +93,9 @@ public class UserService : IUserService
         {
             Id = Guid.NewGuid(),
             Email = request.Email,
-            DisplayName = request.DisplayName
+            DisplayName = request.DisplayName,
+            Role = UserRole.User,
+            AuthProvider = "local"
         };
 
         var hashedPassword = _passwordHasher.HashPassword(user, request.Password);
@@ -99,4 +106,31 @@ public class UserService : IUserService
 
         return OperationResult<User>.Success(user);
     }
+
+    public async Task<OperationResult<User>> RegisterAdminAsync(RegisterAdminRequest request)
+    {
+        if (request.Password != request.ConfirmPassword)
+            return OperationResult<User>.Fail("Passwords do not match");
+
+        var existing = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        if (existing != null)
+            return OperationResult<User>.Fail("Email already registered");
+
+        var adminUser = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = request.Email,
+            DisplayName = request.DisplayName,
+            Role = UserRole.Admin,
+            AuthProvider = "local"
+        };
+
+        adminUser.PasswordHash = _passwordHasher.HashPassword(adminUser, request.Password);
+
+        _appDbContext.Users.Add(adminUser);
+        await _appDbContext.SaveChangesAsync();
+
+        return OperationResult<User>.Success(adminUser);
+    }
+
 }

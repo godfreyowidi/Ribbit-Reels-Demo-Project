@@ -1,9 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RibbitReels.Data.Models
 {
+    public enum UserRole
+    {
+        User,
+        Admin
+    }
+
     public class User
     {
         [Key]
@@ -13,26 +20,21 @@ namespace RibbitReels.Data.Models
         [EmailAddress]
         public string Email { get; set; } = null!;
 
-        // Shown in the UI, from OAuth or user input
+        [Required]
         public string DisplayName { get; set; } = null!;
 
-        // Optional avatar or profile picture from OAuth providers
         public string? AvatarUrl { get; set; }
 
-        // The OAuth provider name (e.g., Google, Facebook)
-        public string AuthProvider { get; set; } = "local"; // fallback for future local auth
+        [Required]
+        public string AuthProvider { get; set; } = "local";
 
-        // The provider-specific user ID (e.g., Google's sub)
         public string? ProviderUserId { get; set; }
 
-        // Either "User", "Admin", etc.
         [Required]
-        public string Role { get; set; } = "User";
+        public UserRole Role { get; set; } = UserRole.User;
 
-        // Used only if supporting email/password login later
         public string? PasswordHash { get; set; }
 
-        // Navigation properties
         public ICollection<LearningProgress> Progress { get; set; } = new List<LearningProgress>();
         public ICollection<UserBranchAssignment> AssignedBranches { get; set; } = new List<UserBranchAssignment>();
     }
