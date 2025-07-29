@@ -48,4 +48,14 @@ public class AuthController : ControllerBase
 
         return Ok(result.Value);
     }
+
+    [HttpPost("google-login")]
+    public async Task<IActionResult> LoginWithGoogle([FromBody] GoogleLoginRequest request)
+    {
+        var result = await _userService.LoginWithGoogleAsync(request);
+        if (!result.IsSuccessful)
+            return StatusCode(result.StatusCode, new { error = result.FailureMessage });
+
+        return Ok(result.Value);
+    }
 }

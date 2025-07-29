@@ -10,4 +10,7 @@ public interface IUserService
     Task<OperationResult<User>> RegisterUserAsync(RegisterUserRequest request);
     Task<OperationResult<User>> RegisterAdminAsync(RegisterAdminRequest request);
     Task<OperationResult<AuthResponse>> LoginAsync(LoginRequest request);
+
+    Task<OperationResult<AuthResponse>> LoginWithGoogleAsync(GoogleLoginRequest request);
+
 }

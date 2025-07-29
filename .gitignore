@@ -1,7 +1,7 @@
 RibbitReels.Api/appsettings.Development.json
 .idea
 RibbitReels.Api/bin
-RibbitReels.Api/obj/
+RibbitReels.Api/obj
 RibbitReels.Data/bin
 RibbitReels.Data/obj
 RibbitReels.Services/bin

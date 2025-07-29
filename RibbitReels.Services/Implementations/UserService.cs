@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -133,4 +134,49 @@ public class UserService : IUserService
         return OperationResult<User>.Success(adminUser);
     }
 
+    public async Task<OperationResult<AuthResponse>> LoginWithGoogleAsync(GoogleLoginRequest request)
+    {
+        GoogleJsonWebSignature.Payload payload;
+
+        try
+        {
+            payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken);
+        }
+        catch (InvalidJwtException)
+        {
+            return OperationResult<AuthResponse>.Fail("Invalid Google ID token", HttpStatusCode.Unauthorized);
+        }
+
+        var user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Email == payload.Email);
+
+        if (user == null)
+        {
+            // Register new user
+            user = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = payload.Email,
+                DisplayName = payload.Name ?? payload.Email,
+                AuthProvider = "google",
+                Role = UserRole.User,
+                PasswordHash = null // No password for social login
+            };
+
+            _appDbContext.Users.Add(user);
+            await _appDbContext.SaveChangesAsync();
+        }
+        else if (user.AuthProvider != "google")
+        {
+            return OperationResult<AuthResponse>.Fail("Email already registered with a different provider", HttpStatusCode.Conflict);
+        }
+
+        var token = GenerateJwtToken(user);
+
+        return OperationResult<AuthResponse>.Success(new AuthResponse
+        {
+            Email = user.Email,
+            DisplayName = user.DisplayName,
+            Token = token
+        });
+    }
 }
