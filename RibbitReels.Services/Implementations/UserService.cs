@@ -6,8 +6,10 @@ using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using RibbitReels.Data;
+using RibbitReels.Data.Configs;
 using RibbitReels.Data.DTOs;
 using RibbitReels.Data.Models;
 using RibbitReels.Services.Interfaces;
@@ -15,12 +17,15 @@ using RibbitReels.Services.Shared;
 
 public class UserService : IUserService
 {
+    private readonly GoogleAuthConfiguration _googleConfig;
     private readonly AppDbContext _appDbContext;
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly IConfiguration _configuration;
 
-    public UserService(AppDbContext appDbContext, IPasswordHasher<User> passwordHasher, IConfiguration configuration)
+
+    public UserService(IOptions<GoogleAuthConfiguration> options, AppDbContext appDbContext, IPasswordHasher<User> passwordHasher, IConfiguration configuration)
     {
+        _googleConfig = options.Value;
         _appDbContext = appDbContext;
         _passwordHasher = passwordHasher;
         _configuration = configuration;
@@ -136,22 +141,40 @@ public class UserService : IUserService
 
     public async Task<OperationResult<AuthResponse>> LoginWithGoogleAsync(GoogleLoginRequest request)
     {
+        if (string.IsNullOrEmpty(request.IdToken))
+        {
+            return OperationResult<AuthResponse>.Fail("Missing Google ID token", HttpStatusCode.BadRequest);
+        }
+
         GoogleJsonWebSignature.Payload payload;
 
         try
         {
-            payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken);
+            var settings = new GoogleJsonWebSignature.ValidationSettings
+            {
+                Audience = new[] { _googleConfig.ClientId }
+            };
+
+            payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken, settings);
         }
         catch (InvalidJwtException)
         {
             return OperationResult<AuthResponse>.Fail("Invalid Google ID token", HttpStatusCode.Unauthorized);
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<AuthResponse>.Fail($"Token validation failed: {ex.Message}", HttpStatusCode.InternalServerError);
+        }
+
+        if (payload == null || string.IsNullOrEmpty(payload.Email))
+        {
+            return OperationResult<AuthResponse>.Fail("Google token is invalid or missing email", HttpStatusCode.BadRequest);
         }
 
         var user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Email == payload.Email);
 
         if (user == null)
         {
-            // Register new user
             user = new User
             {
                 Id = Guid.NewGuid(),
@@ -159,7 +182,7 @@ public class UserService : IUserService
                 DisplayName = payload.Name ?? payload.Email,
                 AuthProvider = "google",
                 Role = UserRole.User,
-                PasswordHash = null // No password for social login
+                PasswordHash = null
             };
 
             _appDbContext.Users.Add(user);
@@ -167,7 +190,7 @@ public class UserService : IUserService
         }
         else if (user.AuthProvider != "google")
         {
-            return OperationResult<AuthResponse>.Fail("Email already registered with a different provider", HttpStatusCode.Conflict);
+            return OperationResult<AuthResponse>.Fail("Email is already registered using a different method.", HttpStatusCode.Conflict);
         }
 
         var token = GenerateJwtToken(user);
@@ -179,4 +202,51 @@ public class UserService : IUserService
             Token = token
         });
     }
+
+    public async Task<OperationResult<IEnumerable<User>>> GetAllUsersAsync()
+    {
+        var users = await _appDbContext.Users.ToListAsync();
+        return OperationResult<IEnumerable<User>>.Success(users);
+    }
+
+    public async Task<OperationResult<User>> GetUserByIdAsync(Guid userId)
+    {
+        var user = await _appDbContext.Users.FindAsync(userId);
+
+        if (user == null)
+            return OperationResult<User>.Fail("User not found");
+
+        return OperationResult<User>.Success(user);
+    }
+
+    public async Task<OperationResult<User>> UpdateUserAsync(Guid userId, UpdateUserRequest request)
+    {
+        var user = await _appDbContext.Users.FindAsync(userId);
+
+        if (user == null)
+            return OperationResult<User>.Fail("User not found");
+
+        // Apply updates if present
+        if (!string.IsNullOrWhiteSpace(request.Email)) user.Email = request.Email;
+        if (!string.IsNullOrWhiteSpace(request.DisplayName)) user.DisplayName = request.DisplayName;
+        if (!string.IsNullOrWhiteSpace(request.AvatarUrl)) user.AvatarUrl = request.AvatarUrl;
+        if (request.Role.HasValue) user.Role = request.Role.Value;
+
+        await _appDbContext.SaveChangesAsync();
+        return OperationResult<User>.Success(user);
+    }
+
+    public async Task<OperationResult<bool>> DeleteUserAsync(Guid userId)
+    {
+        var user = await _appDbContext.Users.FindAsync(userId);
+
+        if (user == null)
+            return OperationResult<bool>.Fail("User not found");
+
+        _appDbContext.Users.Remove(user);
+        await _appDbContext.SaveChangesAsync();
+
+        return OperationResult<bool>.Success(true);
+    }
+
 }

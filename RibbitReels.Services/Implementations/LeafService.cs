@@ -76,6 +76,24 @@ public class LeafService : ILeafService
         }
     }
 
+    public async Task<OperationResult<List<Leaf>>> GetLeavesAsync()
+    {
+        try
+        {
+            var leaves = await _appDbContext.Leaves
+                .Include(l => l.Branch)
+                .OrderBy(l => l.Order)
+                .ToListAsync();
+
+            return OperationResult<List<Leaf>>.Success(leaves);
+        }
+        catch (Exception)
+        {
+            return OperationResult<List<Leaf>>.Fail("Failed to retrieve leaves.", HttpStatusCode.BadRequest);
+        }
+    }
+
+
     public async Task<OperationResult<List<Leaf>>> GetLeavesByBranchIdAsync(Guid branchId)
     {
         try

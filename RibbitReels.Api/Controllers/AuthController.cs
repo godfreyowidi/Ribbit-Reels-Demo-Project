@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using RibbitReels.Data.DTOs;
 using RibbitReels.Services.Interfaces;
-using RibbitReels.Data.Models;
 
 namespace RibbitReels.Api.Controllers;
 
@@ -52,6 +51,13 @@ public class AuthController : ControllerBase
     [HttpPost("google-login")]
     public async Task<IActionResult> LoginWithGoogle([FromBody] GoogleLoginRequest request)
     {
+        Console.WriteLine($"📥 Received Google login token: {request?.IdToken?.Substring(0, 30)}...");
+
+        if (request == null || string.IsNullOrWhiteSpace(request.IdToken))
+        {
+            return BadRequest(new { error = "Google ID token not provided or malformed request" });
+        }
+
         var result = await _userService.LoginWithGoogleAsync(request);
         if (!result.IsSuccessful)
             return StatusCode(result.StatusCode, new { error = result.FailureMessage });

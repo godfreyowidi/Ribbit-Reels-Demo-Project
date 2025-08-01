@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RibbitReels.Api.DTOs;
 using RibbitReels.Data.DTOs;
@@ -63,6 +64,15 @@ public class LeafController : ControllerBase
         });
     }
 
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetLeaves()
+    {
+        var result = await _leafService.GetLeavesAsync();
+        return result.IsSuccessful ? Ok(new { data = result.Value }) : BadRequest(result.FailureMessage);
+    }
+
+
     [HttpGet("branch/{branchId:guid}")]
     public async Task<IActionResult> GetLeavesByBranchId(Guid branchId)
     {
@@ -117,7 +127,7 @@ public class LeafController : ControllerBase
         if (!result.IsSuccessful)
             return StatusCode(result.StatusCode, new { error = result.FailureMessage });
 
-        return NoContent(); // 204 if successfully deleted
+        return NoContent();
     }
 
 }
