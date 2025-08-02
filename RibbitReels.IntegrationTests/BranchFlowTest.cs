@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using RibbitReels.Data.DTOs;
@@ -19,8 +18,7 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task UserCanCompleteBranchFlow()
     {
-        var login = await LoginAsAdmin("test@ribbit.com", "12345678");
-        SetAuthHeader(login.Token);
+        // Authentication is handled by TestAuthHandler based on .env config
 
         var branch = await CreateBranch("Intro to Rust", "Learn Rust fast");
 
@@ -36,26 +34,6 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
         Assert.Equal(2, progress.CompletedLeafIds.Count);
         Assert.True(progress.PercentageCompleted >= 100);
         Assert.NotNull(progress.CompletedAt);
-    }
-
-    private async Task<AuthResponse> LoginAsAdmin(string email, string password)
-    {
-        var payload = new { Email = email, Password = password };
-        var response = await _client.PostAsJsonAsync("/api/auth/login", payload);
-        var content = await response.Content.ReadAsStringAsync();
-
-        Assert.True(response.IsSuccessStatusCode, $"Login failed: {response.StatusCode}, {content}");
-
-        var result = await response.Content.ReadFromJsonAsync<AuthResponse>();
-        Assert.NotNull(result);
-        Assert.False(string.IsNullOrEmpty(result!.Token));
-
-        return result;
-    }
-
-    private void SetAuthHeader(string token)
-    {
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
     private async Task<BranchResponse> CreateBranch(string title, string description)
@@ -99,7 +77,7 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
         };
 
         var response = await _client.PutAsJsonAsync("/api/UserLearningProgress", payload);
-        
+
         if (response.StatusCode != HttpStatusCode.OK)
         {
             var content = await response.Content.ReadAsStringAsync();
@@ -108,7 +86,6 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
-
 
     private async Task<LearningProgressResponse> GetProgress(Guid branchId)
     {
@@ -120,5 +97,4 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
 
         return progress!;
     }
-
 }

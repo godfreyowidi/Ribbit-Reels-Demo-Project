@@ -177,3 +177,6 @@
 /Users/godfreyowidi/Projects/RibbitReels/RibbitReels.UnitTests/obj/Debug/net8.0/RibbitReels.UnitTests.pdb
 /Users/godfreyowidi/Projects/RibbitReels/RibbitReels.UnitTests/obj/Debug/net8.0/RibbitReels.UnitTests.genruntimeconfig.cache
 /Users/godfreyowidi/Projects/RibbitReels/RibbitReels.UnitTests/obj/Debug/net8.0/ref/RibbitReels.UnitTests.dll
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.UnitTests/bin/Debug/net8.0/DotNetEnv.dll
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.UnitTests/bin/Debug/net8.0/Microsoft.Extensions.Configuration.EnvironmentVariables.dll
+/Users/godfreyowidi/Projects/RibbitReels/RibbitReels.UnitTests/bin/Debug/net8.0/Sprache.dll

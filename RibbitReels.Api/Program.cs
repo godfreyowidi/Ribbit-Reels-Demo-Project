@@ -9,8 +9,13 @@ using RibbitReels.Services.Implementations;
 using System.Text;
 using RibbitReels.Data.Configs;
 
+DotNetEnv.Env.Load();
+
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddEnvironmentVariables();
+
+// JWT Configuration
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var jwtKey = jwtSettings["Key"] ?? throw new InvalidOperationException("JWT Key is missing");
 var jwtIssuer = jwtSettings["Issuer"] ?? throw new InvalidOperationException("JWT Issuer is missing");
@@ -21,6 +26,7 @@ builder.Services.Configure<TestUserOptions>(builder.Configuration.GetSection("Au
 
 var key = Encoding.UTF8.GetBytes(jwtKey);
 
+// JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -46,6 +52,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("UserOnly", policy => policy.RequireRole("User"));
 });
 
+// CORS Setup
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 builder.Services.AddCors(options =>
@@ -60,9 +67,12 @@ builder.Services.AddCors(options =>
     });
 });
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine($"[Program.cs] ConnectionString = {connectionString}");
+
+if (string.IsNullOrWhiteSpace(connectionString)) throw new InvalidOperationException("DefaultConnection not found");
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
-);
+    options.UseSqlServer(connectionString));
 
 // Services
 builder.Services.AddScoped<IBranchService, BranchService>();

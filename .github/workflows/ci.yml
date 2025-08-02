@@ -1,4 +1,4 @@
-name: CI - Build and Test
+name: CI - Build, Migrate, and Test
 
 on:
   push:
@@ -19,13 +19,14 @@ jobs:
         ports:
           - 1433:1433
         options: >-
-          --health-cmd "exit 0"
+          --health-cmd "echo 1"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
 
     env:
-      CONNECTIONSTRINGS__DEFAULTCONNECTION: ${{ secrets.CONNECTIONSTRINGS__DEFAULTCONNECTION }}
+      GITHUB_ACTIONS: true
+      CONNECTIONSTRINGS__DEFAULTCONNECTION: Server=sqlserver,1433;Database=RibbitReelsDb;User Id=sa;Password=Password123!;TrustServerCertificate=True
       JWT__KEY: ${{ secrets.JWT__KEY }}
       JWT__ISSUER: ${{ secrets.JWT__ISSUER }}
       JWT__AUDIENCE: ${{ secrets.JWT__AUDIENCE }}
@@ -46,9 +47,9 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Create .env.ci file from secrets
+      - name: Create .env.ci file
         run: |
-          echo "CONNECTIONSTRINGS__DEFAULTCONNECTION=${CONNECTIONSTRINGS__DEFAULTCONNECTION}" >> .env.ci
+          echo "ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=RibbitReelsDb;User Id=sa;Password=Password123!;TrustServerCertificate=True" >> .env.ci
           echo "JWT__KEY=${JWT__KEY}" >> .env.ci
           echo "JWT__ISSUER=${JWT__ISSUER}" >> .env.ci
           echo "JWT__AUDIENCE=${JWT__AUDIENCE}" >> .env.ci
@@ -63,11 +64,17 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      - name: Build
+      - name: Build solution
         run: dotnet build --no-restore --configuration Release
 
-      - name: Run Tests
+      - name: Run EF Core Migrations
+        run: dotnet ef database update --project RibbitReels.Data --startup-project RibbitReels.Api
+        env:
+          DOTNET_ENV_FILE: .env.ci
+          DOTNET_ENVIRONMENT: Development
+
+      - name: Run Unit and Integration Tests
         run: dotnet test --no-build --configuration Release
         env:
-          DOTNET_ENVIRONMENT: Development
           DOTNET_ENV_FILE: .env.ci
+          DOTNET_ENVIRONMENT: Development
