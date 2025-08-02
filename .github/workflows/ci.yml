@@ -66,6 +66,11 @@ jobs:
 
       - name: 🛠️ Build solution
         run: dotnet build --no-restore --configuration Release
+      
+      - name: 🔍 Debug connection string
+        run: |
+          echo "Connection string:"
+          echo "$CONNECTIONSTRINGS__DEFAULTCONNECTION"
 
       - name: 🧰 Restore EF Core CLI Tool
         run: dotnet tool restore
