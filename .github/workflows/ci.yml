@@ -73,11 +73,10 @@ jobs:
       - name: 🕒 Wait for SQL Server to be ready
         run: |
           for i in {1..30}; do
-            /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P 'Password123!' -Q "SELECT 1" && break
-            echo "Waiting for SQL Server... ($i)"
+            nc -z sqlserver 1433 && echo "SQL Server is ready!" && break
+            echo "Waiting for SQL Server on port 1433... ($i)"
             sleep 5
           done
-        shell: bash
 
       - name: 🧬 Run EF Core Migrations
         run: dotnet tool run dotnet-ef database update --project ./RibbitReels.Data --startup-project ./RibbitReels.Api
