@@ -67,11 +67,11 @@ jobs:
       - name: Build solution
         run: dotnet build --no-restore --configuration Release
 
-      - name: 📦 Install EF Core CLI tools
-        run: dotnet tool install --global dotnet-ef
+      - name: 📦 Restore EF Core CLI tool from manifest
+        run: dotnet tool restore
 
       - name: 🧬 Run EF Core Migrations
-        run: dotnet ef database update --project ./RibbitReels.Data --startup-project ./RibbitReels.Api
+        run: dotnet tool run dotnet-ef database update --project ./RibbitReels.Data --startup-project ./RibbitReels.Api
         env:
           DOTNET_ENV_FILE: .env.ci
           DOTNET_ENVIRONMENT: Development
