@@ -49,17 +49,17 @@ jobs:
 
       - name: 📝 Create .env.ci file from secrets
         run: |
-          echo "ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=RibbitReelsDb;User Id=sa;Password=Password123!;TrustServerCertificate=True" >> .env.ci
-          echo "JWT__KEY=${JWT__KEY}" >> .env.ci
-          echo "JWT__ISSUER=${JWT__ISSUER}" >> .env.ci
-          echo "JWT__AUDIENCE=${JWT__AUDIENCE}" >> .env.ci
-          echo "JWT__EXPIREMINUTES=${JWT__EXPIREMINUTES}" >> .env.ci
-          echo "GOOGLEAUTH__CLIENTID=${GOOGLEAUTH__CLIENTID}" >> .env.ci
-          echo "GOOGLEAUTH__CLIENTSECRET=${GOOGLEAUTH__CLIENTSECRET}" >> .env.ci
-          echo "AUTHENTICATION__TESTUSER__USERID=${AUTHENTICATION__TESTUSER__USERID}" >> .env.ci
-          echo "AUTHENTICATION__TESTUSER__EMAIL=${AUTHENTICATION__TESTUSER__EMAIL}" >> .env.ci
-          echo "AUTHENTICATION__TESTUSER__NAME=${AUTHENTICATION__TESTUSER__NAME}" >> .env.ci
-          echo "AUTHENTICATION__TESTUSER__ROLE=${AUTHENTICATION__TESTUSER__ROLE}" >> .env.ci
+          echo "ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=RibbitReelsDb;User Id=sa;Password=Password123!;TrustServerCertificate=True" >> .env
+          echo "JWT__KEY=${JWT__KEY}" >> .env
+          echo "JWT__ISSUER=${JWT__ISSUER}" >> .env
+          echo "JWT__AUDIENCE=${JWT__AUDIENCE}" >> .env
+          echo "JWT__EXPIREMINUTES=${JWT__EXPIREMINUTES}" >> .env
+          echo "GOOGLEAUTH__CLIENTID=${GOOGLEAUTH__CLIENTID}" >> .env
+          echo "GOOGLEAUTH__CLIENTSECRET=${GOOGLEAUTH__CLIENTSECRET}" >> .env
+          echo "AUTHENTICATION__TESTUSER__USERID=${AUTHENTICATION__TESTUSER__USERID}" >> .env
+          echo "AUTHENTICATION__TESTUSER__EMAIL=${AUTHENTICATION__TESTUSER__EMAIL}" >> .env
+          echo "AUTHENTICATION__TESTUSER__NAME=${AUTHENTICATION__TESTUSER__NAME}" >> .env
+          echo "AUTHENTICATION__TESTUSER__ROLE=${AUTHENTICATION__TESTUSER__ROLE}" >> .env
 
       - name: 📦 Restore NuGet dependencies
         run: dotnet restore
