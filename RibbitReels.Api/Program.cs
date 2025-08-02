@@ -7,25 +7,28 @@ using RibbitReels.Data.Models;
 using RibbitReels.Services.Interfaces;
 using RibbitReels.Services.Implementations;
 using System.Text;
-using Microsoft.AspNetCore.Builder;
 using RibbitReels.Data.Configs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load JWT settings safely
+var originalConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("DefaultConnection is not set in configuration.");
+
+if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true")
+{
+    originalConnectionString = originalConnectionString.Replace("localhost", "sqlserver");
+}
+
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var jwtKey = jwtSettings["Key"] ?? throw new InvalidOperationException("JWT Key is missing");
 var jwtIssuer = jwtSettings["Issuer"] ?? throw new InvalidOperationException("JWT Issuer is missing");
 var jwtAudience = jwtSettings["Audience"] ?? throw new InvalidOperationException("JWT Audience is missing");
 
 builder.Services.Configure<GoogleAuthConfiguration>(builder.Configuration.GetSection("GoogleAuth"));
-builder.Services.Configure<TestUserOptions>(
-    builder.Configuration.GetSection("Authentication:TestUser"));
-
+builder.Services.Configure<TestUserOptions>(builder.Configuration.GetSection("Authentication:TestUser"));
 
 var key = Encoding.UTF8.GetBytes(jwtKey);
 
-// JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -45,7 +48,6 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Authorization Policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
@@ -60,15 +62,14 @@ builder.Services.AddCors(options =>
     policy =>
     {
         policy.WithOrigins("http://localhost:5173")
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials();
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
-// EF Core
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+    options.UseSqlServer(originalConnectionString)
 );
 
 // Services
@@ -79,28 +80,24 @@ builder.Services.AddScoped<IUserBranchAssignmentService, UserBranchAssignmentSer
 builder.Services.AddScoped<ILearningProgressService, LearningProgressService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
-// Controllers & Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Middleware
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
     app.UseSwagger();
 }
 
 app.UseHttpsRedirection();
-
 app.UseRouting();
 app.UseCors(MyAllowSpecificOrigins);
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
+
 app.Run();
 
 public partial class Program { }
