@@ -10,6 +10,19 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
+    env:
+      CONNECTIONSTRINGS__DEFAULTCONNECTION: ${{ secrets.CONNECTIONSTRINGS__DEFAULTCONNECTION }}
+      JWT__KEY: ${{ secrets.JWT__KEY }}
+      JWT__ISSUER: ${{ secrets.JWT__ISSUER }}
+      JWT__AUDIENCE: ${{ secrets.JWT__AUDIENCE }}
+      JWT__EXPIREMINUTES: ${{ secrets.JWT__EXPIREMINUTES }}
+      GOOGLEAUTH__CLIENTID: ${{ secrets.GOOGLEAUTH__CLIENTID }}
+      GOOGLEAUTH__CLIENTSECRET: ${{ secrets.GOOGLEAUTH__CLIENTSECRET }}
+      AUTHENTICATION__TESTUSER__USERID: ${{ secrets.AUTHENTICATION__TESTUSER__USERID }}
+      AUTHENTICATION__TESTUSER__EMAIL: ${{ secrets.AUTHENTICATION__TESTUSER__EMAIL }}
+      AUTHENTICATION__TESTUSER__NAME: ${{ secrets.AUTHENTICATION__TESTUSER__NAME }}
+      AUTHENTICATION__TESTUSER__ROLE: ${{ secrets.AUTHENTICATION__TESTUSER__ROLE }}
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -19,6 +32,20 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
+    - name: Create .env.ci file from secrets
+      run: |
+        echo "CONNECTIONSTRINGS__DEFAULTCONNECTION=${CONNECTIONSTRINGS__DEFAULTCONNECTION}" >> .env.ci
+        echo "JWT__KEY=${JWT__KEY}" >> .env.ci
+        echo "JWT__ISSUER=${JWT__ISSUER}" >> .env.ci
+        echo "JWT__AUDIENCE=${JWT__AUDIENCE}" >> .env.ci
+        echo "JWT__EXPIREMINUTES=${JWT__EXPIREMINUTES}" >> .env.ci
+        echo "GOOGLEAUTH__CLIENTID=${GOOGLEAUTH__CLIENTID}" >> .env.ci
+        echo "GOOGLEAUTH__CLIENTSECRET=${GOOGLEAUTH__CLIENTSECRET}" >> .env.ci
+        echo "AUTHENTICATION__TESTUSER__USERID=${AUTHENTICATION__TESTUSER__USERID}" >> .env.ci
+        echo "AUTHENTICATION__TESTUSER__EMAIL=${AUTHENTICATION__TESTUSER__EMAIL}" >> .env.ci
+        echo "AUTHENTICATION__TESTUSER__NAME=${AUTHENTICATION__TESTUSER__NAME}" >> .env.ci
+        echo "AUTHENTICATION__TESTUSER__ROLE=${AUTHENTICATION__TESTUSER__ROLE}" >> .env.ci
+
     - name: Restore dependencies
       run: dotnet restore
 
@@ -27,3 +54,6 @@ jobs:
 
     - name: Run Tests
       run: dotnet test --no-build --configuration Release
+      env:
+        DOTNET_ENVIRONMENT: Development
+        DOTNET_ENV_FILE: .env.ci
