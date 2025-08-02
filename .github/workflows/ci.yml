@@ -70,6 +70,15 @@ jobs:
       - name: 🧰 Restore EF Core CLI Tool
         run: dotnet tool restore
 
+      - name: 🕒 Wait for SQL Server to be ready
+        run: |
+          for i in {1..30}; do
+            /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P 'Password123!' -Q "SELECT 1" && break
+            echo "Waiting for SQL Server... ($i)"
+            sleep 5
+          done
+        shell: bash
+
       - name: 🧬 Run EF Core Migrations
         run: dotnet tool run dotnet-ef database update --project ./RibbitReels.Data --startup-project ./RibbitReels.Api
         env:
