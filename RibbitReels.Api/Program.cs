@@ -19,6 +19,8 @@ var jwtIssuer = jwtSettings["Issuer"] ?? throw new InvalidOperationException("JW
 var jwtAudience = jwtSettings["Audience"] ?? throw new InvalidOperationException("JWT Audience is missing");
 
 builder.Services.Configure<GoogleAuthConfiguration>(builder.Configuration.GetSection("GoogleAuth"));
+builder.Services.Configure<TestUserOptions>(
+    builder.Configuration.GetSection("Authentication:TestUser"));
 
 
 var key = Encoding.UTF8.GetBytes(jwtKey);
@@ -92,9 +94,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseRouting();
 app.UseCors(MyAllowSpecificOrigins);
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 app.Run();
+
+public partial class Program { }

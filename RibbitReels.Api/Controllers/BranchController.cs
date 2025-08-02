@@ -23,6 +23,7 @@ public class BranchController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateBranch([FromBody] CreateBranchRequest request)
     {
+        Console.WriteLine("=== HIT CREATE BRANCH ENDPOINT ===");
         if (request == null || request.Title == null)
         {
             return BadRequest(new { error = "Title is required." });

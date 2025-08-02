@@ -52,8 +52,17 @@ public class LearningProgressService : ILearningProgressService
 
     public async Task<OperationResult<LearningProgressResponse>> UpdateProgressAsync(UpdateProgressRequest request)
     {
+        var branch = await _appDbContext.Branches
+            .Include(b => b.Leaves)
+            .FirstOrDefaultAsync(b => b.Id == request.BranchId);
+
+        if (branch == null)
+            return OperationResult<LearningProgressResponse>.Fail("Branch not found", HttpStatusCode.NotFound);
+
         var progress = await _appDbContext.UserProgress
             .FirstOrDefaultAsync(p => p.UserId == request.UserId && p.BranchId == request.BranchId);
+
+        var incomingLeafIds = request.CompletedLeafIds?.Distinct().ToList() ?? new();
 
         if (progress == null)
         {
@@ -62,17 +71,26 @@ public class LearningProgressService : ILearningProgressService
                 Id = Guid.NewGuid(),
                 UserId = request.UserId,
                 BranchId = request.BranchId,
-                CompletedLeafIds = request.CompletedLeafIds?.Distinct().ToList() ?? new List<Guid>(),
-                CompletedAt = request.CompletedAt
+                CompletedLeafIds = incomingLeafIds
             };
+
+            if (branch.Leaves.All(l => incomingLeafIds.Contains(l.Id)))
+                progress.CompletedAt = DateTime.UtcNow;
 
             _appDbContext.UserProgress.Add(progress);
         }
         else
         {
-            var updatedIds = progress.CompletedLeafIds.Union(request.CompletedLeafIds ?? new List<Guid>()).Distinct().ToList();
+            var updatedIds = progress.CompletedLeafIds
+                .Union(incomingLeafIds)
+                .Distinct()
+                .ToList();
+
             progress.CompletedLeafIds = updatedIds;
-            progress.CompletedAt = request.CompletedAt;
+
+            if (branch.Leaves.All(l => updatedIds.Contains(l.Id)))
+                progress.CompletedAt ??= DateTime.UtcNow;
+
             _appDbContext.UserProgress.Update(progress);
         }
 
@@ -86,6 +104,7 @@ public class LearningProgressService : ILearningProgressService
             CompletedAt = progress.CompletedAt
         });
     }
+
 
     public async Task<OperationResult<List<CompletedBranchResponse>>> GetCompletedBranchesAsync(Guid userId)
     {

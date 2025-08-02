@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RibbitReels.Data", "RibbitR
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RibbitReels.Services", "RibbitReels.Services\RibbitReels.Services.csproj", "{B465B3C5-6828-4E5C-9BEB-80CACA8738D3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RibbitReels.UnitTests", "RibbitReels.UnitTests\RibbitReels.UnitTests.csproj", "{CE96F4C0-D40F-4B40-8B15-69825E2ACEC8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RibbitReels.IntegrationTests", "RibbitReels.IntegrationTests\RibbitReels.IntegrationTests.csproj", "{FA1FA973-6AC2-4740-825E-7577A834C6F6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +34,13 @@ Global
 		{B465B3C5-6828-4E5C-9BEB-80CACA8738D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B465B3C5-6828-4E5C-9BEB-80CACA8738D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B465B3C5-6828-4E5C-9BEB-80CACA8738D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE96F4C0-D40F-4B40-8B15-69825E2ACEC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE96F4C0-D40F-4B40-8B15-69825E2ACEC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE96F4C0-D40F-4B40-8B15-69825E2ACEC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE96F4C0-D40F-4B40-8B15-69825E2ACEC8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA1FA973-6AC2-4740-825E-7577A834C6F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA1FA973-6AC2-4740-825E-7577A834C6F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA1FA973-6AC2-4740-825E-7577A834C6F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA1FA973-6AC2-4740-825E-7577A834C6F6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

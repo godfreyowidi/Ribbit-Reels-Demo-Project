@@ -91,4 +91,27 @@ public class UserBranchAssignmentService : IUserBranchAssignmentService
         return OperationResult<List<UserBranchAssignmentResponse>>.Success(assignments);
     }
 
+    public async Task<OperationResult<bool>> UnassignBranchAsync(Guid userId, Guid branchId)
+    {
+        try
+        {
+            var assignment = await _appDbContext.AssignedBranches
+                .FirstOrDefaultAsync(a => a.UserId == userId && a.BranchId == branchId);
+
+            if (assignment == null)
+            {
+                return OperationResult<bool>.Fail("Assignment not found.", HttpStatusCode.NotFound);
+            }
+
+            _appDbContext.AssignedBranches.Remove(assignment);
+            await _appDbContext.SaveChangesAsync();
+
+            return OperationResult<bool>.Success(true, HttpStatusCode.OK);
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<bool>.Fail(ex, "Failed to unassign branch.");
+        }
+    }
+
 }

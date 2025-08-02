@@ -1,4 +1,3 @@
-RibbitReels.Api/appsettings.Development.json
 .idea
 RibbitReels.Api/bin
 RibbitReels.Api/obj
@@ -6,3 +5,13 @@ RibbitReels.Data/bin
 RibbitReels.Data/obj
 RibbitReels.Services/bin
 RibbitReels.Services/obj
+RibbitReels.IntegrationTests/bin
+RibbitReels.IntegrationTests/obj
+
+RibbitReels.UnitTests/bin
+RibbitReels.UnitTests/obj
+
+
+
+
+.env

@@ -39,22 +39,30 @@ public class UserLearningProgressController : ControllerBase
     [HttpPut]
     public async Task<IActionResult> UpdateProgress([FromBody] UpdateProgressRequest request)
     {
-        if (request == null || request.BranchId == Guid.Empty)
-            return BadRequest(new { error = "Invalid request payload." });
+        try
+        {
+            if (request == null || request.BranchId == Guid.Empty)
+                return BadRequest(new { error = "Invalid request payload." });
 
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!Guid.TryParse(userIdClaim, out var userId))
-            return Unauthorized(new { error = "Invalid user ID." });
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized(new { error = "Invalid user ID." });
 
-        request.UserId = userId;
+            request.UserId = userId;
 
-        var result = await _learningProgressService.UpdateProgressAsync(request);
+            var result = await _learningProgressService.UpdateProgressAsync(request);
 
-        if (!result.IsSuccessful)
-            return StatusCode((int)result.StatusCode, new { error = result.FailureMessage });
+            if (!result.IsSuccessful)
+                return StatusCode((int)result.StatusCode, new { error = result.FailureMessage });
 
-        return Ok(result.Value);
+            return Ok(result.Value);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message, stack = ex.StackTrace });
+        }
     }
+
 
 
         [HttpGet("completed")]

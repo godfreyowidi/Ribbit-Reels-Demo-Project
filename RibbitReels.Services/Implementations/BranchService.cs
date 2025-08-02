@@ -146,18 +146,74 @@ public class BranchService : IBranchService
         }
     }
 
-    public Task<OperationResult<List<Branch>>> GetCompletedBranchesAsync(Guid userId)
+    public async Task<OperationResult<List<Branch>>> GetCompletedBranchesAsync(Guid userId)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var completedBranchIds = await _appDbContext.UserProgress
+                .Where(p => p.UserId == userId && p.CompletedAt != null)
+                .Select(p => p.BranchId)
+                .ToListAsync();
+
+            var branches = await _appDbContext.Branches
+                .Where(b => completedBranchIds.Contains(b.Id))
+                .Include(b => b.Leaves)
+                .ToListAsync();
+
+            return OperationResult<List<Branch>>.Success(branches, HttpStatusCode.OK);
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<List<Branch>>.Fail(ex, "Failed to retrieve completed branches.");
+        }
     }
 
-    public Task<OperationResult<List<Branch>>> GetIncompleteBranchesAsync(Guid userId)
+
+    public async Task<OperationResult<List<Branch>>> GetIncompleteBranchesAsync(Guid userId)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var completedBranchIds = await _appDbContext.UserProgress
+                .Where(p => p.UserId == userId && p.CompletedAt != null)
+                .Select(p => p.BranchId)
+                .ToListAsync();
+
+            var branches = await _appDbContext.Branches
+                .Where(b => !completedBranchIds.Contains(b.Id))
+                .Include(b => b.Leaves)
+                .ToListAsync();
+
+            return OperationResult<List<Branch>>.Success(branches, HttpStatusCode.OK);
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<List<Branch>>.Fail(ex, "Failed to retrieve incomplete branches.");
+        }
     }
 
-    public Task<OperationResult<List<Branch>>> GetRecommendedBranchesAsync(Guid userId)
+
+    public async Task<OperationResult<List<Branch>>> GetRecommendedBranchesAsync(Guid userId)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var completedBranchIds = await _appDbContext.UserProgress
+                .Where(p => p.UserId == userId && p.CompletedAt != null)
+                .Select(p => p.BranchId)
+                .ToListAsync();
+
+            var recommendedBranches = await _appDbContext.Branches
+                .Where(b => !completedBranchIds.Contains(b.Id))
+                .OrderBy(b => Guid.NewGuid())
+                .Take(3)
+                .Include(b => b.Leaves)
+                .ToListAsync();
+
+            return OperationResult<List<Branch>>.Success(recommendedBranches, HttpStatusCode.OK);
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<List<Branch>>.Fail(ex, "Failed to retrieve recommended branches.");
+        }
     }
+
 }

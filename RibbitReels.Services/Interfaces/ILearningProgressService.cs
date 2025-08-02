@@ -10,3 +10,4 @@ public interface ILearningProgressService
     Task<OperationResult<List<CompletedBranchResponse>>> GetCompletedBranchesAsync(Guid userId);
 
 }
+
