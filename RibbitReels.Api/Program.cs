@@ -11,14 +11,6 @@ using RibbitReels.Data.Configs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var originalConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("DefaultConnection is not set in configuration.");
-
-if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true")
-{
-    originalConnectionString = originalConnectionString.Replace("localhost", "sqlserver");
-}
-
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var jwtKey = jwtSettings["Key"] ?? throw new InvalidOperationException("JWT Key is missing");
 var jwtIssuer = jwtSettings["Issuer"] ?? throw new InvalidOperationException("JWT Issuer is missing");
@@ -69,7 +61,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(originalConnectionString)
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
 // Services
