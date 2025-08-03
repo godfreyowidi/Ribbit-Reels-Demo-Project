@@ -26,29 +26,33 @@ resource "azurerm_container_app" "api" {
   revision_mode                = "Single"
 
   template {
-    containers {
+    container {
       name   = "ribbitreels-api"
       image  = "ghcr.io/${var.github_owner}/ribbitreels-api:latest"
-      resources {
-        cpu    = 0.5
-        memory = "1.0Gi"
-      }
+      cpu    = 0.5
+      memory = "1Gi"
+
       env {
         name  = "WEBSITES_PORT"
         value = "8080"
       }
     }
-
-    ingress {
-      external_enabled = true
-      target_port      = 8080
-      transport        = "auto"
-    }
+    container_start_command = []
   }
 
-  registry_credential {
-    server   = "ghcr.io"
-    username = var.github_owner
-    secret   = var.github_token
+  ingress {
+    external_enabled = true
+    target_port      = 8080
+  }
+
+  secret {
+    name  = "ghcr-token"
+    value = var.github_token
+  }
+
+  registry {
+    server               = "ghcr.io"
+    username             = var.github_owner
+    password_secret_name = "ghcr-token"
   }
 }
