@@ -26,17 +26,17 @@ jobs:
 
     env:
       GITHUB_ACTIONS: true
-      CONNECTIONSTRINGS__DEFAULTCONNECTION: Server=sqlserver,1433;Database=RibbitReelsDb;User Id=sa;Password=Password123!;TrustServerCertificate=True
-      JWT__KEY: ${{ secrets.JWT__KEY }}
-      JWT__ISSUER: ${{ secrets.JWT__ISSUER }}
-      JWT__AUDIENCE: ${{ secrets.JWT__AUDIENCE }}
-      JWT__EXPIREMINUTES: ${{ secrets.JWT__EXPIREMINUTES }}
-      GOOGLEAUTH__CLIENTID: ${{ secrets.GOOGLEAUTH__CLIENTID }}
-      GOOGLEAUTH__CLIENTSECRET: ${{ secrets.GOOGLEAUTH__CLIENTSECRET }}
-      AUTHENTICATION__TESTUSER__USERID: ${{ secrets.AUTHENTICATION__TESTUSER__USERID }}
-      AUTHENTICATION__TESTUSER__EMAIL: ${{ secrets.AUTHENTICATION__TESTUSER__EMAIL }}
-      AUTHENTICATION__TESTUSER__NAME: ${{ secrets.AUTHENTICATION__TESTUSER__NAME }}
-      AUTHENTICATION__TESTUSER__ROLE: ${{ secrets.AUTHENTICATION__TESTUSER__ROLE }}
+      ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=RibbitReelsDb;User Id=sa;Password=Password123!;TrustServerCertificate=True
+      Jwt__Key: ${{ secrets.JWT__KEY }}
+      Jwt__Issuer: ${{ secrets.JWT__ISSUER }}
+      Jwt__Audience: ${{ secrets.JWT__AUDIENCE }}
+      Jwt__ExpireMinutes: ${{ secrets.JWT__EXPIREMINUTES }}
+      GoogleAuth__ClientId: ${{ secrets.GOOGLEAUTH__CLIENTID }}
+      GoogleAuth__ClientSecret: ${{ secrets.GOOGLEAUTH__CLIENTSECRET }}
+      Authentication__TestUser__UserId: ${{ secrets.AUTHENTICATION__TESTUSER__USERID }}
+      Authentication__TestUser__Email: ${{ secrets.AUTHENTICATION__TESTUSER__EMAIL }}
+      Authentication__TestUser__Name: ${{ secrets.AUTHENTICATION__TESTUSER__NAME }}
+      Authentication__TestUser__Role: ${{ secrets.AUTHENTICATION__TESTUSER__ROLE }}
 
     steps:
       - name: 🛎️ Checkout code
@@ -47,30 +47,11 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: 📝 Create .env.ci file from secrets
-        run: |
-          echo "ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=RibbitReelsDb;User Id=sa;Password=Password123!;TrustServerCertificate=True" >> .env
-          echo "JWT__KEY=${JWT__KEY}" >> .env
-          echo "JWT__ISSUER=${JWT__ISSUER}" >> .env
-          echo "JWT__AUDIENCE=${JWT__AUDIENCE}" >> .env
-          echo "JWT__EXPIREMINUTES=${JWT__EXPIREMINUTES}" >> .env
-          echo "GOOGLEAUTH__CLIENTID=${GOOGLEAUTH__CLIENTID}" >> .env
-          echo "GOOGLEAUTH__CLIENTSECRET=${GOOGLEAUTH__CLIENTSECRET}" >> .env
-          echo "AUTHENTICATION__TESTUSER__USERID=${AUTHENTICATION__TESTUSER__USERID}" >> .env
-          echo "AUTHENTICATION__TESTUSER__EMAIL=${AUTHENTICATION__TESTUSER__EMAIL}" >> .env
-          echo "AUTHENTICATION__TESTUSER__NAME=${AUTHENTICATION__TESTUSER__NAME}" >> .env
-          echo "AUTHENTICATION__TESTUSER__ROLE=${AUTHENTICATION__TESTUSER__ROLE}" >> .env
-
       - name: 📦 Restore NuGet dependencies
         run: dotnet restore
 
       - name: 🛠️ Build solution
         run: dotnet build --no-restore --configuration Release
-      
-      - name: 🔍 Debug connection string
-        run: |
-          echo "Connection string:"
-          echo "$CONNECTIONSTRINGS__DEFAULTCONNECTION"
 
       - name: 🧰 Restore EF Core CLI Tool
         run: dotnet tool restore
@@ -78,19 +59,17 @@ jobs:
       - name: 🕒 Wait for SQL Server to be ready
         run: |
           for i in {1..30}; do
-            nc -z sqlserver 1433 && echo "SQL Server is ready!" && break
-            echo "Waiting for SQL Server on port 1433... ($i)"
+            nc -z sqlserver 1433 && echo "✅ SQL Server is ready!" && break
+            echo "⏳ Waiting for SQL Server on port 1433... ($i)"
             sleep 5
           done
 
       - name: 🧬 Run EF Core Migrations
         run: dotnet tool run dotnet-ef database update --project ./RibbitReels.Data --startup-project ./RibbitReels.Api
         env:
-          DOTNET_ENV_FILE: .env.ci
           DOTNET_ENVIRONMENT: Development
 
       - name: ✅ Run Unit and Integration Tests
         run: dotnet test --no-build --configuration Release
         env:
-          DOTNET_ENV_FILE: .env.ci
           DOTNET_ENVIRONMENT: Development

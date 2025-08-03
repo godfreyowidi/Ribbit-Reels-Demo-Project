@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RibbitReels.UnitTests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+08588653fba5c87fdc8d373ee5bb6c4cd35a0d58")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+51e7c79972210981a6cd7b9a15e04495ca71468b")]
 [assembly: System.Reflection.AssemblyProductAttribute("RibbitReels.UnitTests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RibbitReels.UnitTests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
