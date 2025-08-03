@@ -11,13 +11,12 @@ public class AppDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Branch> Branches => Set<Branch>();
-    public DbSet<Leaf> Leaves => Set<Leaf>();
-    public DbSet<LearningProgress> UserProgress => Set<LearningProgress>();
-    public DbSet<UserBranchAssignment> AssignedBranches => Set<UserBranchAssignment>();
+    public DbSet<Leaf> Leafs => Set<Leaf>();
+    public DbSet<LearningProgress> LearningProgress => Set<LearningProgress>();
+    public DbSet<UserBranchAssignment> UserBranchAssignment => Set<UserBranchAssignment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Might consider configuring JSON serialization for CompletedLeafIds
         modelBuilder.Entity<LearningProgress>()
             .Property(up => up.CompletedLeafIds)
             .HasConversion(

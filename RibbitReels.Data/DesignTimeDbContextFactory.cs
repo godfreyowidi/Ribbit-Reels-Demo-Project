@@ -11,14 +11,14 @@ namespace RibbitReels.Data
         {
             var basePath = Path.Combine(Directory.GetCurrentDirectory(), "../RibbitReels.Api");
 
-            // Load .env for local development
+            // load .env
             var envFile = Path.Combine(basePath, ".env");
             if (File.Exists(envFile))
             {
                 Env.Load(envFile);
             }
 
-            // Build configuration with .env and environment variables
+            // build configuration with .env & envirn variables
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(basePath)
                 .AddEnvironmentVariables()
@@ -29,7 +29,6 @@ namespace RibbitReels.Data
             if (string.IsNullOrWhiteSpace(connectionString))
                 throw new InvalidOperationException("❌ DefaultConnection not set for DesignTimeDbContextFactory.");
 
-            // Replace localhost if running in GitHub Actions
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true")
             {
                 connectionString = connectionString.Replace("localhost", "sqlserver");

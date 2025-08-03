@@ -5,5 +5,5 @@ public class BranchResponse
     public Guid Id { get; set; }
     public string Title { get; set; } = null!;
     public string Description { get; set; } = null!;
-    public List<LeafResponse> Leaves { get; set; } = new();
+    public List<LeafResponse> Leafs { get; set; } = new();
 }

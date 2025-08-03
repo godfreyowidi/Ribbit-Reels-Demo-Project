@@ -23,7 +23,7 @@ public class UserBranchAssignmentController : ControllerBase
     {
         var result = await _assignmentService.AssignBranchAsync(request);
         if (!result.IsSuccessful)
-            return StatusCode((int)result.StatusCode, result.FailureMessage);
+            return StatusCode(result.StatusCode, result.FailureMessage);
 
         return Ok(result.Value);
     }
@@ -47,7 +47,7 @@ public class UserBranchAssignmentController : ControllerBase
     {
         var result = await _assignmentService.GetAssignmentsByManagerAsync(managerId);
         if (!result.IsSuccessful)
-            return StatusCode((int)result.StatusCode, result.FailureMessage);
+            return StatusCode(result.StatusCode, result.FailureMessage);
 
         return Ok(result.Value);
     }

@@ -19,24 +19,22 @@ public class LearningProgressService : ILearningProgressService
 
     public async Task<OperationResult<LearningProgressResponse>> GetProgressAsync(Guid userId, Guid branchId)
     {
-        var progress = await _appDbContext.UserProgress
+        var progress = await _appDbContext.LearningProgress
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.UserId == userId && p.BranchId == branchId);
 
         if (progress == null)
-        {
             return OperationResult<LearningProgressResponse>.Fail("No progress found", HttpStatusCode.NotFound);
-        }
 
-        var totalLeaves = await _appDbContext.Leaves
+        var totalLeafs = await _appDbContext.Leafs
             .Where(l => l.BranchId == branchId)
             .CountAsync();
 
         double percentageCompleted = 0;
 
-        if (totalLeaves > 0 && progress.CompletedLeafIds != null)
+        if (totalLeafs > 0 && progress.CompletedLeafIds != null)
         {
-            percentageCompleted = progress.CompletedLeafIds.Count / (double)totalLeaves * 100;
+            percentageCompleted = progress.CompletedLeafIds.Count / (double)totalLeafs * 100;
         }
 
         return OperationResult<LearningProgressResponse>.Success(new LearningProgressResponse
@@ -53,13 +51,13 @@ public class LearningProgressService : ILearningProgressService
     public async Task<OperationResult<LearningProgressResponse>> UpdateProgressAsync(UpdateProgressRequest request)
     {
         var branch = await _appDbContext.Branches
-            .Include(b => b.Leaves)
+            .Include(b => b.Leafs)
             .FirstOrDefaultAsync(b => b.Id == request.BranchId);
 
         if (branch == null)
             return OperationResult<LearningProgressResponse>.Fail("Branch not found", HttpStatusCode.NotFound);
 
-        var progress = await _appDbContext.UserProgress
+        var progress = await _appDbContext.LearningProgress
             .FirstOrDefaultAsync(p => p.UserId == request.UserId && p.BranchId == request.BranchId);
 
         var incomingLeafIds = request.CompletedLeafIds?.Distinct().ToList() ?? new();
@@ -74,10 +72,10 @@ public class LearningProgressService : ILearningProgressService
                 CompletedLeafIds = incomingLeafIds
             };
 
-            if (branch.Leaves.All(l => incomingLeafIds.Contains(l.Id)))
+            if (branch.Leafs.All(l => incomingLeafIds.Contains(l.Id)))
                 progress.CompletedAt = DateTime.UtcNow;
 
-            _appDbContext.UserProgress.Add(progress);
+            _appDbContext.LearningProgress.Add(progress);
         }
         else
         {
@@ -88,10 +86,10 @@ public class LearningProgressService : ILearningProgressService
 
             progress.CompletedLeafIds = updatedIds;
 
-            if (branch.Leaves.All(l => updatedIds.Contains(l.Id)))
+            if (branch.Leafs.All(l => updatedIds.Contains(l.Id)))
                 progress.CompletedAt ??= DateTime.UtcNow;
 
-            _appDbContext.UserProgress.Update(progress);
+            _appDbContext.LearningProgress.Update(progress);
         }
 
         await _appDbContext.SaveChangesAsync();
@@ -108,7 +106,7 @@ public class LearningProgressService : ILearningProgressService
 
     public async Task<OperationResult<List<CompletedBranchResponse>>> GetCompletedBranchesAsync(Guid userId)
     {
-        var completed = await _appDbContext.UserProgress
+        var completed = await _appDbContext.LearningProgress
             .AsNoTracking()
             .Where(p => p.UserId == userId && p.CompletedAt != null)
             .Select(p => new CompletedBranchResponse

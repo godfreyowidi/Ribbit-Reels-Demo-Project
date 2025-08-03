@@ -18,12 +18,10 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task UserCanCompleteBranchFlow()
     {
-        // Authentication is handled by TestAuthHandler based on .env config
+        var branch = await CreateBranch("Introduction to Sustainable Afforestation", "Learn how to increase forest cover");
 
-        var branch = await CreateBranch("Intro to Rust", "Learn Rust fast");
-
-        var createdLeaf1 = await CreateLeaf(branch.Id, "Basics", "Variables in Rust", "http://video1.com");
-        var createdLeaf2 = await CreateLeaf(branch.Id, "Ownership", "Memory safety", "http://video2.com");
+        var createdLeaf1 = await CreateLeaf(branch.Id, "What is Afforestation", "How it differs with reforestation", "http://video1.com");
+        var createdLeaf2 = await CreateLeaf(branch.Id, "Methods", "Allowing natural regeneration", "http://video2.com");
 
         await MarkLeafComplete(branch.Id, createdLeaf1.Id);
         await MarkLeafComplete(branch.Id, createdLeaf2.Id);

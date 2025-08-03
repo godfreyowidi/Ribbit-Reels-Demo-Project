@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using RibbitReels.Services.Interfaces;
 using RibbitReels.Data.DTOs;
-using RibbitReels.Data.Models;
 using Microsoft.AspNetCore.Authorization;
 
 namespace RibbitReels.Api.Controllers;

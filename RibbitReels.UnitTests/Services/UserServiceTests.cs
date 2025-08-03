@@ -26,7 +26,7 @@ public class UserServiceTests
             ClientSecret = "dummy"
         });
 
-        // Use in-memory EF Core DB
+        // use in-memory EF Core DB
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
@@ -35,7 +35,7 @@ public class UserServiceTests
 
         _passwordHasherMock = new Mock<IPasswordHasher<User>>();
 
-        // Dummy IConfiguration
+        // dummy IConfiguration
         var configDict = new Dictionary<string, string>
         {
             { "Jwt:Key", "super-secret-key-that-is-32+chars" },

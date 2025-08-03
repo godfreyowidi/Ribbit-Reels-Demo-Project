@@ -142,9 +142,7 @@ public class UserService : IUserService
     public async Task<OperationResult<AuthResponse>> LoginWithGoogleAsync(GoogleLoginRequest request)
     {
         if (string.IsNullOrEmpty(request.IdToken))
-        {
             return OperationResult<AuthResponse>.Fail("Missing Google ID token", HttpStatusCode.BadRequest);
-        }
 
         GoogleJsonWebSignature.Payload payload;
 
@@ -167,9 +165,7 @@ public class UserService : IUserService
         }
 
         if (payload == null || string.IsNullOrEmpty(payload.Email))
-        {
             return OperationResult<AuthResponse>.Fail("Google token is invalid or missing email", HttpStatusCode.BadRequest);
-        }
 
         var user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Email == payload.Email);
 
@@ -189,9 +185,7 @@ public class UserService : IUserService
             await _appDbContext.SaveChangesAsync();
         }
         else if (user.AuthProvider != "google")
-        {
             return OperationResult<AuthResponse>.Fail("Email is already registered using a different method.", HttpStatusCode.Conflict);
-        }
 
         var token = GenerateJwtToken(user);
 

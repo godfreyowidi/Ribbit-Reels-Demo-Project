@@ -8,17 +8,17 @@ WORKDIR /src
 
 COPY *.sln .
 
-# ⬇️ Add all .csproj files
+# all projects .csproj files
 COPY RibbitReels.Api/*.csproj RibbitReels.Api/
 COPY RibbitReels.Data/*.csproj RibbitReels.Data/
 COPY RibbitReels.Services/*.csproj RibbitReels.Services/
 COPY RibbitReels.UnitTests/*.csproj RibbitReels.UnitTests/
 COPY RibbitReels.IntegrationTests/*.csproj RibbitReels.IntegrationTests/
 
-# ✅ Restore all projects listed in the solution
+# restore all projects
 RUN dotnet restore
 
-# Now copy everything
+# copy
 COPY . .
 WORKDIR /src/RibbitReels.Api
 RUN dotnet publish -c Release -o /app/publish

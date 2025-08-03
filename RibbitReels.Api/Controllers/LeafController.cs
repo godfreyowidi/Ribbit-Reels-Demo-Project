@@ -18,6 +18,7 @@ public class LeafController : ControllerBase
         _leafService = leafService;
     }
 
+    // POST : api/leaf/{branchId}
     [HttpPost("{branchId}")]
     public async Task<IActionResult> CreateLeaf(Guid branchId, [FromBody] CreateLeafRequest request)
     {
@@ -45,6 +46,7 @@ public class LeafController : ControllerBase
         });
     }
 
+    // GET: api/{id}
     [HttpGet("{id}")]
     public async Task<IActionResult> GetLeafById(Guid id)
     {
@@ -64,19 +66,20 @@ public class LeafController : ControllerBase
         });
     }
 
+    // GET: api/leaf
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetLeaves()
+    public async Task<IActionResult> GetLeafs()
     {
-        var result = await _leafService.GetLeavesAsync();
+        var result = await _leafService.GetLeafsAsync();
         return result.IsSuccessful ? Ok(new { data = result.Value }) : BadRequest(result.FailureMessage);
     }
 
-
+    // GET: api/branch?/{branchId}
     [HttpGet("branch/{branchId:guid}")]
-    public async Task<IActionResult> GetLeavesByBranchId(Guid branchId)
+    public async Task<IActionResult> GetLeafsByBranchId(Guid branchId)
     {
-        var result = await _leafService.GetLeavesByBranchIdAsync(branchId);
+        var result = await _leafService.GetLeafsByBranchIdAsync(branchId);
 
         if (!result.IsSuccessful)
             return StatusCode(result.StatusCode, new { error = result.FailureMessage });
@@ -93,6 +96,7 @@ public class LeafController : ControllerBase
         return Ok(responses);
     }
 
+    // PUT: /api/leaf/{id}
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateLeaf(Guid id, [FromBody] UpdateLeafRequest request)
     {
@@ -119,6 +123,7 @@ public class LeafController : ControllerBase
         });
     }
 
+    // DELETE: /api/leaf/{id}
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteLeaf(Guid id)
     {

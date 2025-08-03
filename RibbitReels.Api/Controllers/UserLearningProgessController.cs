@@ -53,7 +53,7 @@ public class UserLearningProgressController : ControllerBase
             var result = await _learningProgressService.UpdateProgressAsync(request);
 
             if (!result.IsSuccessful)
-                return StatusCode((int)result.StatusCode, new { error = result.FailureMessage });
+                return StatusCode(result.StatusCode, new { error = result.FailureMessage });
 
             return Ok(result.Value);
         }
@@ -63,17 +63,15 @@ public class UserLearningProgressController : ControllerBase
         }
     }
 
+    [HttpGet("completed")]
+    public async Task<IActionResult> GetCompletedProgress([FromQuery] Guid userId)
+    {
+        var result = await _learningProgressService.GetCompletedBranchesAsync(userId);
 
+        if (!result.IsSuccessful)
+            return StatusCode(result.StatusCode, new { message = result.FailureMessage });
 
-        [HttpGet("completed")]
-        public async Task<IActionResult> GetCompletedProgress([FromQuery] Guid userId)
-        {
-            var result = await _learningProgressService.GetCompletedBranchesAsync(userId);
-
-            if (!result.IsSuccessful)
-                return StatusCode((int)result.StatusCode, new { message = result.FailureMessage });
-
-            return Ok(result.Value); // unwrap data
-        }
+        return Ok(result.Value);
+    }
 
 }

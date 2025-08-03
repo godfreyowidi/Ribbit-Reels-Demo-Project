@@ -22,15 +22,11 @@ public class BranchService : IBranchService
         {
             // input validation - will move this though
             if (string.IsNullOrWhiteSpace(branch.Title) || string.IsNullOrWhiteSpace(branch.Description))
-            {
                 return OperationResult<Branch>.Fail("Branch title and description are required.", HttpStatusCode.BadRequest);
-            }
 
             // initialize id
             if (branch.Id == Guid.Empty)
-            {
                 branch.Id = Guid.NewGuid();
-            }
 
             // add to db
             _appDbContext.Branches.Add(branch);
@@ -51,15 +47,11 @@ public class BranchService : IBranchService
             var existingBranch = await _appDbContext.Branches.FindAsync(id);
 
             if (existingBranch == null)
-            {
                 return OperationResult<Branch>.Fail("Branch not found.", HttpStatusCode.NotFound);
-            }
 
             // input changes validation here 
             if (string.IsNullOrWhiteSpace(updatedBranch.Title) || string.IsNullOrWhiteSpace(updatedBranch.Description))
-            {
                 return OperationResult<Branch>.Fail("Title and description cannot be empty.", HttpStatusCode.BadRequest);
-            }
 
             // then we update the fields
             existingBranch.Title = updatedBranch.Title;
@@ -82,16 +74,14 @@ public class BranchService : IBranchService
         try
         {
             var branch = await _appDbContext.Branches
-                .Include(b => b.Leaves)
+                .Include(b => b.Leafs)
                 .FirstOrDefaultAsync(b => b.Id == id);
 
             if (branch == null)
-            {
                 return OperationResult<bool>.Fail("Branch not found.", HttpStatusCode.NotFound);
-            }
 
             // removing associated leaves
-            _appDbContext.Leaves.RemoveRange(branch.Leaves);
+            _appDbContext.Leafs.RemoveRange(branch.Leafs);
 
             // removing the branch now
             _appDbContext.Branches.Remove(branch);
@@ -113,7 +103,7 @@ public class BranchService : IBranchService
         {
             var branches = await _appDbContext.Branches
                 .AsNoTracking()
-                .Include(b => b.Leaves) // this will include leaves for that branch - will remove when branches become many
+                .Include(b => b.Leafs) // this will include leaves for that branch - will remove when branches become many
                 .ToListAsync();
 
             return OperationResult<List<Branch>>.Success(branches, HttpStatusCode.OK);
@@ -130,13 +120,11 @@ public class BranchService : IBranchService
         try
         {
             var branch = await _appDbContext.Branches
-                .Include(b => b.Leaves)
+                .Include(b => b.Leafs)
                 .FirstOrDefaultAsync(b => b.Id == id);
 
             if (branch == null)
-            {
                 return OperationResult<Branch>.Fail($"Branch with ID {id} not found.", HttpStatusCode.NotFound);
-            }
 
             return OperationResult<Branch>.Success(branch, HttpStatusCode.OK);
         }
@@ -150,14 +138,14 @@ public class BranchService : IBranchService
     {
         try
         {
-            var completedBranchIds = await _appDbContext.UserProgress
+            var completedBranchIds = await _appDbContext.LearningProgress
                 .Where(p => p.UserId == userId && p.CompletedAt != null)
                 .Select(p => p.BranchId)
                 .ToListAsync();
 
             var branches = await _appDbContext.Branches
                 .Where(b => completedBranchIds.Contains(b.Id))
-                .Include(b => b.Leaves)
+                .Include(b => b.Leafs)
                 .ToListAsync();
 
             return OperationResult<List<Branch>>.Success(branches, HttpStatusCode.OK);
@@ -173,14 +161,14 @@ public class BranchService : IBranchService
     {
         try
         {
-            var completedBranchIds = await _appDbContext.UserProgress
+            var completedBranchIds = await _appDbContext.LearningProgress
                 .Where(p => p.UserId == userId && p.CompletedAt != null)
                 .Select(p => p.BranchId)
                 .ToListAsync();
 
             var branches = await _appDbContext.Branches
                 .Where(b => !completedBranchIds.Contains(b.Id))
-                .Include(b => b.Leaves)
+                .Include(b => b.Leafs)
                 .ToListAsync();
 
             return OperationResult<List<Branch>>.Success(branches, HttpStatusCode.OK);
@@ -196,7 +184,7 @@ public class BranchService : IBranchService
     {
         try
         {
-            var completedBranchIds = await _appDbContext.UserProgress
+            var completedBranchIds = await _appDbContext.LearningProgress
                 .Where(p => p.UserId == userId && p.CompletedAt != null)
                 .Select(p => p.BranchId)
                 .ToListAsync();
@@ -205,7 +193,7 @@ public class BranchService : IBranchService
                 .Where(b => !completedBranchIds.Contains(b.Id))
                 .OrderBy(b => Guid.NewGuid())
                 .Take(3)
-                .Include(b => b.Leaves)
+                .Include(b => b.Leafs)
                 .ToListAsync();
 
             return OperationResult<List<Branch>>.Success(recommendedBranches, HttpStatusCode.OK);

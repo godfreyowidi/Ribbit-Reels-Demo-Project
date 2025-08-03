@@ -6,5 +6,5 @@ public class Branch
     public string Title { get; set; } = null!;
     public string Description { get; set; } = null!;
 
-    public ICollection<Leaf> Leaves { get; set; } = new List<Leaf>();
+    public ICollection<Leaf> Leafs { get; set; } = new List<Leaf>();
 }

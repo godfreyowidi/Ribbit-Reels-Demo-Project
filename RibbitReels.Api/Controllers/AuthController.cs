@@ -15,6 +15,7 @@ public class AuthController : ControllerBase
         _userService = userService;
     }
 
+    // POST: api/auth/register
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterUserRequest request)
     {
@@ -26,6 +27,7 @@ public class AuthController : ControllerBase
         return Ok(new { userId = result.Value.Id, email = result.Value.Email });
     }
 
+    // POST: api/auth/register-admin
     [HttpPost("register-admin")]
     public async Task<IActionResult> RegisterAdmin([FromBody] RegisterAdminRequest request)
     {
@@ -37,6 +39,7 @@ public class AuthController : ControllerBase
         return Ok(new { adminId = result.Value.Id, email = result.Value.Email });
     }
 
+    // POST: api/auth/login
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -48,15 +51,12 @@ public class AuthController : ControllerBase
         return Ok(result.Value);
     }
 
+    // POST: api/auth/google-login
     [HttpPost("google-login")]
     public async Task<IActionResult> LoginWithGoogle([FromBody] GoogleLoginRequest request)
     {
-        Console.WriteLine($"📥 Received Google login token: {request?.IdToken?.Substring(0, 30)}...");
-
         if (request == null || string.IsNullOrWhiteSpace(request.IdToken))
-        {
             return BadRequest(new { error = "Google ID token not provided or malformed request" });
-        }
 
         var result = await _userService.LoginWithGoogleAsync(request);
         if (!result.IsSuccessful)

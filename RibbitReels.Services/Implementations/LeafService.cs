@@ -23,28 +23,22 @@ public class LeafService : ILeafService
         {
             // input validation
             if (string.IsNullOrWhiteSpace(leaf.Title) || string.IsNullOrWhiteSpace(leaf.VideoUrl))
-            {
                 return OperationResult<Leaf>.Fail("Leaf must have a title and video URL.", HttpStatusCode.BadRequest);
-            }
 
             // every leaf have to reference a branch
             var branch = await _appDbContext.Branches.FindAsync(branchId);
             if (branch == null)
-            {
                 return OperationResult<Leaf>.Fail("Branch not found.", HttpStatusCode.NotFound);
-            }
 
             // assign the branchId to the leaf
             leaf.BranchId = branchId;
 
             // initializing id
             if (leaf.Id == Guid.Empty)
-            {
                 leaf.Id = Guid.NewGuid();
-            }
 
             // save
-            _appDbContext.Leaves.Add(leaf);
+            _appDbContext.Leafs.Add(leaf);
             await _appDbContext.SaveChangesAsync();
 
             return OperationResult<Leaf>.Success(leaf, HttpStatusCode.Created);
@@ -59,14 +53,12 @@ public class LeafService : ILeafService
     {
         try
         {
-            var leaf = await _appDbContext.Leaves
+            var leaf = await _appDbContext.Leafs
                 .Include(l => l.Branch)
                 .FirstOrDefaultAsync(l => l.Id == id);
 
             if (leaf == null)
-            {
                 return OperationResult<Leaf>.Fail("Leaf not found.", HttpStatusCode.NotFound);
-            }
 
             return OperationResult<Leaf>.Success(leaf, HttpStatusCode.OK);
         }
@@ -76,11 +68,11 @@ public class LeafService : ILeafService
         }
     }
 
-    public async Task<OperationResult<List<Leaf>>> GetLeavesAsync()
+    public async Task<OperationResult<List<Leaf>>> GetLeafsAsync()
     {
         try
         {
-            var leaves = await _appDbContext.Leaves
+            var leaves = await _appDbContext.Leafs
                 .Include(l => l.Branch)
                 .OrderBy(l => l.Order)
                 .ToListAsync();
@@ -94,11 +86,11 @@ public class LeafService : ILeafService
     }
 
 
-    public async Task<OperationResult<List<Leaf>>> GetLeavesByBranchIdAsync(Guid branchId)
+    public async Task<OperationResult<List<Leaf>>> GetLeafsByBranchIdAsync(Guid branchId)
     {
         try
         {
-            var leaves = await _appDbContext.Leaves
+            var leaves = await _appDbContext.Leafs
                 .Where(l => l.BranchId == branchId)
                 .OrderBy(l => l.Order)
                 .ToListAsync();
@@ -115,11 +107,9 @@ public class LeafService : ILeafService
     {
         try
         {
-            var existingLeaf = await _appDbContext.Leaves.FindAsync(id);
+            var existingLeaf = await _appDbContext.Leafs.FindAsync(id);
             if (existingLeaf == null)
-            {
                 return OperationResult<Leaf>.Fail("Leaf not found", HttpStatusCode.NotFound);
-            }
 
             existingLeaf.Title = updatedLeaf.Title;
             existingLeaf.VideoUrl = updatedLeaf.VideoUrl;
@@ -138,14 +128,12 @@ public class LeafService : ILeafService
 
     public async Task<OperationResult<bool>> DeleteLeafAsync(Guid id)
     {
-        var leaf = await _appDbContext.Leaves.FindAsync(id);
+        var leaf = await _appDbContext.Leafs.FindAsync(id);
 
         if (leaf == null)
-        {
             return OperationResult<bool>.Fail("Leaf not found", HttpStatusCode.NotFound);
-        }
 
-        _appDbContext.Leaves.Remove(leaf);
+        _appDbContext.Leafs.Remove(leaf);
 
         try
         {

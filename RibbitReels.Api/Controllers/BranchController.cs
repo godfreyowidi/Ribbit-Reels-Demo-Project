@@ -19,15 +19,13 @@ public class BranchController : ControllerBase
         _branchService = branchService;
     }
 
+    // POST: api/branch
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateBranch([FromBody] CreateBranchRequest request)
     {
-        Console.WriteLine("=== HIT CREATE BRANCH ENDPOINT ===");
         if (request == null || request.Title == null)
-        {
             return BadRequest(new { error = "Title is required." });
-        }
 
         var branch = new Branch
         {
@@ -43,6 +41,7 @@ public class BranchController : ControllerBase
         return StatusCode(result.StatusCode, result.Value);
     }
 
+    // GET: api/branch
     [HttpGet]
     public async Task<IActionResult> GetAllBranches()
     {
@@ -56,7 +55,7 @@ public class BranchController : ControllerBase
             Id = branch.Id,
             Title = branch.Title,
             Description = branch.Description,
-            Leaves = branch.Leaves?.Select(leaf => new LeafResponse
+            Leafs = branch.Leafs?.Select(leaf => new LeafResponse
             {
                 Id = leaf.Id,
                 Title = leaf.Title,
@@ -69,6 +68,7 @@ public class BranchController : ControllerBase
 
     }
 
+    // GET: api/branch/{id}
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetBranchById(Guid id)
     {
@@ -83,7 +83,7 @@ public class BranchController : ControllerBase
             Id = branch.Id,
             Title = branch.Title,
             Description = branch.Description,
-            Leaves = branch.Leaves?.Select(leaf => new LeafResponse
+            Leafs = branch.Leafs?.Select(leaf => new LeafResponse
             {
                 Id = leaf.Id,
                 Title = leaf.Title,
@@ -95,6 +95,7 @@ public class BranchController : ControllerBase
 
     }
 
+    // GET: api/branch/{id}
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateBranch(Guid id, [FromBody] Branch updatedBranch)
     {
@@ -106,7 +107,7 @@ public class BranchController : ControllerBase
         return StatusCode(result.StatusCode, result.Value);
     }
 
-
+    // DELETE: api/branch/{id}
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteBranch(Guid id)
     {

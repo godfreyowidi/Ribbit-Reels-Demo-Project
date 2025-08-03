@@ -19,29 +19,29 @@ public class UserBranchAssignmentService : IUserBranchAssignmentService
 
     public async Task<OperationResult<UserBranchAssignmentResponse>> AssignBranchAsync(AssignBranchRequest request)
     {
-        // Check if user exists
+        // check if user exists
         var user = await _appDbContext.Users.FindAsync(request.UserId);
         if (user == null)
             return OperationResult<UserBranchAssignmentResponse>.Fail("User not found", HttpStatusCode.NotFound);
 
-        // Check if branch exists
+        // check if branch exists
         var branch = await _appDbContext.Branches.FindAsync(request.BranchId);
         if (branch == null)
             return OperationResult<UserBranchAssignmentResponse>.Fail("Branch not found", HttpStatusCode.NotFound);
 
-        // Check if manager exists
+        // check if admin exists
         var manager = await _appDbContext.Users.FindAsync(request.AssignedByManagerId);
         if (manager == null || manager.Role != UserRole.Admin)
             return OperationResult<UserBranchAssignmentResponse>.Fail("Invalid assigning manager", HttpStatusCode.Forbidden);
 
-        // Prevent duplicate assignment
-        var existingAssignment = await _appDbContext.AssignedBranches
+        // prevent duplicate assignment - of the same branch
+        var existingAssignment = await _appDbContext.UserBranchAssignment
             .FirstOrDefaultAsync(x => x.UserId == request.UserId && x.BranchId == request.BranchId);
 
         if (existingAssignment != null)
             return OperationResult<UserBranchAssignmentResponse>.Fail("Branch already assigned to user", HttpStatusCode.Conflict);
 
-        // Create new assignment
+        // create new assignment
         var assignment = new UserBranchAssignment
         {
             Id = Guid.NewGuid(),
@@ -50,7 +50,7 @@ public class UserBranchAssignmentService : IUserBranchAssignmentService
             AssignedByManagerId = request.AssignedByManagerId
         };
 
-        _appDbContext.AssignedBranches.Add(assignment);
+        _appDbContext.UserBranchAssignment.Add(assignment);
         await _appDbContext.SaveChangesAsync();
 
         return OperationResult<UserBranchAssignmentResponse>.Success(new UserBranchAssignmentResponse
@@ -63,7 +63,7 @@ public class UserBranchAssignmentService : IUserBranchAssignmentService
 
     public async Task<OperationResult<List<UserBranchAssignmentResponse>>> GetAssignmentsByManagerAsync(Guid managerId)
     {
-        var assignments = await _appDbContext.AssignedBranches
+        var assignments = await _appDbContext.UserBranchAssignment
             .Where(x => x.AssignedByManagerId == managerId)
             .Select(a => new UserBranchAssignmentResponse
             {
@@ -78,7 +78,7 @@ public class UserBranchAssignmentService : IUserBranchAssignmentService
 
     public async Task<OperationResult<List<UserBranchAssignmentResponse>>> GetAssignmentsByUserAsync(Guid userId)
     {
-        var assignments = await _appDbContext.AssignedBranches
+        var assignments = await _appDbContext.UserBranchAssignment
             .Where(x => x.UserId == userId)
             .Select(a => new UserBranchAssignmentResponse
             {
@@ -95,15 +95,13 @@ public class UserBranchAssignmentService : IUserBranchAssignmentService
     {
         try
         {
-            var assignment = await _appDbContext.AssignedBranches
+            var assignment = await _appDbContext.UserBranchAssignment
                 .FirstOrDefaultAsync(a => a.UserId == userId && a.BranchId == branchId);
 
             if (assignment == null)
-            {
                 return OperationResult<bool>.Fail("Assignment not found.", HttpStatusCode.NotFound);
-            }
 
-            _appDbContext.AssignedBranches.Remove(assignment);
+            _appDbContext.UserBranchAssignment.Remove(assignment);
             await _appDbContext.SaveChangesAsync();
 
             return OperationResult<bool>.Success(true, HttpStatusCode.OK);
