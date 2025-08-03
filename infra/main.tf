@@ -28,21 +28,19 @@ resource "azurerm_linux_web_app" "api_app" {
 
   site_config {
     application_stack {
-      docker_image_name   = "${var.github_owner}/ribbitreels-api"
-      docker_registry_url = "ghcr.io"
+      docker_image_name   = "ghcr.io/${var.github_owner}/ribbitreels-api:latest"
+      docker_registry_url = "https://ghcr.io"
     }
   }
 
   app_settings = {
-    WEBSITES_PORT = "8080" # Must match exposed port in your Dockerfile
+    WEBSITES_PORT                  = "8080" # Match Dockerfile's EXPOSE
+    DOCKER_REGISTRY_SERVER_URL    = "https://ghcr.io"
+    DOCKER_REGISTRY_SERVER_USERNAME = var.github_owner
+    DOCKER_REGISTRY_SERVER_PASSWORD = var.github_token
   }
-
-  container_registry_use_managed_identity = false
-  container_registry_username              = var.github_owner
-  container_registry_password              = var.github_token
 
   identity {
     type = "SystemAssigned"
   }
 }
-
