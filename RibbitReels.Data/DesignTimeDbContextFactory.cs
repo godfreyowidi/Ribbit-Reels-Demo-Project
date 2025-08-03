@@ -11,14 +11,17 @@ namespace RibbitReels.Data
         {
             var basePath = Path.Combine(Directory.GetCurrentDirectory(), "../RibbitReels.Api");
 
-            // load .env
-            var envFile = Path.Combine(basePath, ".env");
-            if (File.Exists(envFile))
+            var envPath = Path.Combine(basePath, ".env");
+            if (File.Exists(envPath))
             {
-                Env.Load(envFile);
+                Env.Load(envPath);
+                Console.WriteLine($"Loaded .env from: {envPath}");
+            }
+            else
+            {
+                Console.WriteLine($"No .env found at: {envPath}. Will rely on environment variables.");
             }
 
-            // build configuration with .env & envirn variables
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(basePath)
                 .AddEnvironmentVariables()
@@ -27,12 +30,22 @@ namespace RibbitReels.Data
             var connectionString = configuration.GetConnectionString("DefaultConnection");
 
             if (string.IsNullOrWhiteSpace(connectionString))
-                throw new InvalidOperationException("❌ DefaultConnection not set for DesignTimeDbContextFactory.");
+            {
+                connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+            }
+
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new InvalidOperationException("DefaultConnection not set in either .env or environment variables.");
+            }
 
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true")
             {
                 connectionString = connectionString.Replace("localhost", "sqlserver");
+                Console.WriteLine("Replaced 'localhost' with 'sqlserver' for CI environment.");
             }
+
+            Console.WriteLine($"Using connection string: {connectionString}");
 
             var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
             optionsBuilder.UseSqlServer(connectionString);

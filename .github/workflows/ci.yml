@@ -1,4 +1,4 @@
-name: CI - Build, Migrate, and Test
+name: CI - Build, Migrate via Tests, and Test
 
 on:
   push:
@@ -12,14 +12,14 @@ jobs:
 
     services:
       sqlserver:
-        image: mcr.microsoft.com/mssql/server:2019-latest
+        image: mcr.microsoft.com/mssql/server:2022-latest
         env:
           SA_PASSWORD: Password123!
           ACCEPT_EULA: Y
         ports:
           - 1433:1433
         options: >-
-          --health-cmd "echo 1"
+          --health-cmd "exit 0"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
@@ -33,11 +33,7 @@ jobs:
       Jwt__ExpireMinutes: ${{ secrets.JWT__EXPIREMINUTES }}
       GoogleAuth__ClientId: ${{ secrets.GOOGLEAUTH__CLIENTID }}
       GoogleAuth__ClientSecret: ${{ secrets.GOOGLEAUTH__CLIENTSECRET }}
-      Authentication__TestUser__UserId: ${{ secrets.AUTHENTICATION__TESTUSER__USERID }}
-      Authentication__TestUser__Email: ${{ secrets.AUTHENTICATION__TESTUSER__EMAIL }}
-      Authentication__TestUser__Name: ${{ secrets.AUTHENTICATION__TESTUSER__NAME }}
-      Authentication__TestUser__Role: ${{ secrets.AUTHENTICATION__TESTUSER__ROLE }}
-
+      
     steps:
       - name: 🛎️ Checkout code
         uses: actions/checkout@v3
@@ -53,23 +49,16 @@ jobs:
       - name: 🛠️ Build solution
         run: dotnet build --no-restore --configuration Release
 
-      - name: 🧰 Restore EF Core CLI Tool
-        run: dotnet tool restore
-
       - name: 🕒 Wait for SQL Server to be ready
         run: |
+          echo "⏳ Waiting for SQL Server to be ready..."
           for i in {1..30}; do
-            nc -z sqlserver 1433 && echo "✅ SQL Server is ready!" && break
-            echo "⏳ Waiting for SQL Server on port 1433... ($i)"
+            /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P Password123! -Q "SELECT 1" && echo "✅ SQL Server is ready!" && break
+            echo "Attempt $i: SQL Server not ready yet..."
             sleep 5
           done
 
-      - name: 🧬 Run EF Core Migrations
-        run: dotnet tool run dotnet-ef database update --project ./RibbitReels.Data --startup-project ./RibbitReels.Api
-        env:
-          DOTNET_ENVIRONMENT: Development
-
-      - name: ✅ Run Unit and Integration Tests
+      - name: ✅ Run Unit and Integration Tests (migrates DB internally)
         run: dotnet test --no-build --configuration Release
         env:
           DOTNET_ENVIRONMENT: Development

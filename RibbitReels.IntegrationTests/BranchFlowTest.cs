@@ -1,8 +1,8 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Threading.Tasks;
+using System.Text.Json;
 using RibbitReels.Data.DTOs;
-using Xunit;
 
 namespace RibbitReels.IntegrationTests.Branches;
 
@@ -18,14 +18,41 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task UserCanCompleteBranchFlow()
     {
+        // 1. Login as admin
+        var adminToken = await RegisterAndLoginTestAdminAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        // 2. Admin creates a branch
         var branch = await CreateBranch("Introduction to Sustainable Afforestation", "Learn how to increase forest cover");
 
+        // 3. Admin adds leaves
         var createdLeaf1 = await CreateLeaf(branch.Id, "What is Afforestation", "How it differs with reforestation", "http://video1.com");
         var createdLeaf2 = await CreateLeaf(branch.Id, "Methods", "Allowing natural regeneration", "http://video2.com");
 
+        // 4. Register user & get userId + token
+        var (userId, userToken) = await RegisterTestUserAndReturnIdAndTokenAsync();
+
+        // 5. Admin assigns branch to the user
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var assignPayload = new
+        {
+            UserId = userId,
+            BranchId = branch.Id,
+            AssignedByManagerId = await GetUserIdFromTokenAsync(adminToken)
+        };
+
+        var assignResponse = await _client.PostAsJsonAsync("/api/UserBranchAssignment/assign", assignPayload);
+        Assert.Equal(HttpStatusCode.OK, assignResponse.StatusCode);
+
+        // 6. Switch to learner context
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
+
+        // 7. Learner marks leaf as complete
         await MarkLeafComplete(branch.Id, createdLeaf1.Id);
         await MarkLeafComplete(branch.Id, createdLeaf2.Id);
 
+        // 8. Check learning progress
         var progress = await GetProgress(branch.Id);
         Assert.NotNull(progress);
         Assert.Equal(branch.Id, progress.BranchId);
@@ -94,5 +121,73 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
         Assert.NotNull(progress);
 
         return progress!;
+    }
+
+    private async Task<(Guid userId, string token)> RegisterTestUserAndReturnIdAndTokenAsync()
+    {
+        var testEmail = $"user-{Guid.NewGuid()}@test.com";
+        var password = "StrongP@ssw0rd!";
+
+        var registerPayload = new
+        {
+            Email = testEmail,
+            Password = password,
+            ConfirmPassword = password,
+            DisplayName = "Assigned User"
+        };
+
+        var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerPayload);
+        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
+
+        var registerData = await registerResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var userId = Guid.Parse(registerData.GetProperty("userId").GetString()!);
+
+        var loginPayload = new { Email = testEmail, Password = password };
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginPayload);
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+
+        var loginResult = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>();
+        return (userId, loginResult!.Token);
+    }
+
+    private async Task<string> RegisterAndLoginTestAdminAsync()
+    {
+        var testEmail = $"admin-{Guid.NewGuid()}@test.com";
+        var password = "AdminTest123!";
+
+        var registerPayload = new
+        {
+            Email = testEmail,
+            DisplayName = "CI Test Admin",
+            Password = password,
+            ConfirmPassword = password
+        };
+
+        var registerResponse = await _client.PostAsJsonAsync("/api/auth/register-admin", registerPayload);
+        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
+
+        var loginPayload = new
+        {
+            Email = testEmail,
+            Password = password
+        };
+
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginPayload);
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+
+        var loginResult = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>();
+        Assert.NotNull(loginResult?.Token);
+
+        return loginResult!.Token!;
+    }
+
+    private async Task<Guid> GetUserIdFromTokenAsync(string token)
+    {
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var response = await _client.GetAsync("/api/auth/me");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var data = await response.Content.ReadFromJsonAsync<JsonElement>();
+        return Guid.Parse(data.GetProperty("id").GetString()!);
     }
 }

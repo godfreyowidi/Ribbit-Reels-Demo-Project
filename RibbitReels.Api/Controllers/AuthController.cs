@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RibbitReels.Data.DTOs;
 using RibbitReels.Services.Interfaces;
@@ -13,6 +15,20 @@ public class AuthController : ControllerBase
     public AuthController(IUserService userService)
     {
         _userService = userService;
+    }
+
+    [Authorize]
+    [HttpGet("me")]
+    public  IActionResult GetCurrentUser()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (Guid.TryParse(userId, out var id))
+        {
+            return Ok(new { id });
+        }
+
+        return Unauthorized();
     }
 
     // POST: api/auth/register

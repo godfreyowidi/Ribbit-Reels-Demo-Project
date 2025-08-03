@@ -20,6 +20,7 @@ public class LeafController : ControllerBase
 
     // POST : api/leaf/{branchId}
     [HttpPost("{branchId}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateLeaf(Guid branchId, [FromBody] CreateLeafRequest request)
     {
         var leaf = new Leaf
@@ -98,6 +99,7 @@ public class LeafController : ControllerBase
 
     // PUT: /api/leaf/{id}
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateLeaf(Guid id, [FromBody] UpdateLeafRequest request)
     {
         var updatedLeaf = new Leaf
@@ -125,6 +127,7 @@ public class LeafController : ControllerBase
 
     // DELETE: /api/leaf/{id}
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteLeaf(Guid id)
     {
         var result = await _leafService.DeleteLeafAsync(id);
