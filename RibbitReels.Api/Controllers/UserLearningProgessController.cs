@@ -37,6 +37,7 @@ public class UserLearningProgressController : ControllerBase
 
     // PUT: api/UserLearningProgress
     [HttpPut]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateProgress([FromBody] UpdateProgressRequest request)
     {
         try

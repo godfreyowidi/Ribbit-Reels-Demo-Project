@@ -1,4 +1,4 @@
-name: CI - Build, Migrate via Tests, and Test
+name: CI - Build, Test, Push to GHCR, and Deploy via Terraform
 
 on:
   push:
@@ -33,7 +33,7 @@ jobs:
       Jwt__ExpireMinutes: ${{ secrets.JWT__EXPIREMINUTES }}
       GoogleAuth__ClientId: ${{ secrets.GOOGLEAUTH__CLIENTID }}
       GoogleAuth__ClientSecret: ${{ secrets.GOOGLEAUTH__CLIENTSECRET }}
-      
+
     steps:
       - name: 🛎️ Checkout code
         uses: actions/checkout@v3
@@ -62,3 +62,55 @@ jobs:
         run: dotnet test --no-build --configuration Release
         env:
           DOTNET_ENVIRONMENT: Development
+
+      - name: 🔐 Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🏷️ Set Docker image tag
+        run: echo "IMAGE_TAG=ghcr.io/${{ github.repository_owner }}/ribbitreels-api:latest" >> $GITHUB_ENV
+
+      - name: 🛠️ Build Docker image
+        run: docker build -t $IMAGE_TAG -f RibbitReels.Api/Dockerfile .
+
+      - name: 📤 Push Docker image to GHCR
+        run: docker push $IMAGE_TAG
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛎️ Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🔧 Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.2
+
+      - name: 📦 Terraform Init
+        run: terraform init
+        working-directory: ./infra
+
+      - name: 🧪 Terraform Validate
+        run: terraform validate
+        working-directory: ./infra
+
+      - name: 🚀 Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: ./infra
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          TF_VAR_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+          TF_VAR_client_secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          TF_VAR_github_owner: ${{ github.repository_owner }}
+          TF_VAR_github_token: ${{ secrets.GITHUB_TOKEN }}
