@@ -19,16 +19,16 @@ terraform {
 provider "azurerm" {
   features {}
 
-  client_id       = var.client_id
-  client_secret   = var.client_secret
-  tenant_id       = var.tenant_id
-  subscription_id = var.subscription_id
-  skip_provider_registration = true
+  client_id                        = var.client_id
+  client_secret                    = var.client_secret
+  tenant_id                        = var.tenant_id
+  subscription_id                  = var.subscription_id
+  resource_provider_registrations = ["Microsoft.App", "Microsoft.ContainerRegistry"]
 }
 
 resource "azurerm_resource_group" "main" {
   name     = "ribbitreels-rg"
-  location = "East US"
+  location = "East US 2"
 }
 
 resource "azurerm_container_app_environment" "env" {
