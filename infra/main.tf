@@ -22,7 +22,6 @@ resource "azurerm_container_app" "api" {
   name                         = "ribbitreels-api"
   container_app_environment_id = azurerm_container_app_environment.env.id
   resource_group_name          = azurerm_resource_group.main.name
-  location                     = azurerm_resource_group.main.location
   revision_mode                = "Single"
 
   template {
@@ -60,3 +59,4 @@ resource "azurerm_container_app" "api" {
     password_secret_name = "ghcr-token"
   }
 }
+
