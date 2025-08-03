@@ -12,33 +12,60 @@ resource "azurerm_resource_group" "main" {
   location = "East US"
 }
 
-resource "azurerm_service_plan" "app_service_plan" {
-  name                = "ribbitreels-plan"
+resource "azurerm_log_analytics_workspace" "log" {
+  name                = "ribbitreels-logs"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
-  os_type             = "Linux"
-  sku_name            = "B1"
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
 }
 
-resource "azurerm_linux_web_app" "api_app" {
-  name                = "ribbitreels-app"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  service_plan_id     = azurerm_service_plan.app_service_plan.id
+resource "azurerm_container_app_environment" "aca_env" {
+  name                       = "ribbitreels-env"
+  location                   = azurerm_resource_group.main.location
+  resource_group_name        = azurerm_resource_group.main.name
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.log.id
+}
 
-  site_config {
-    application_stack {
-      docker_image_name   = "ghcr.io/${var.github_owner}/ribbitreels-api:latest"
-      docker_registry_url = "https://ghcr.io"
-    }
-  }
-
-  app_settings = {
-    WEBSITES_PORT = "8080" # This must match your Dockerfile's EXPOSE
-  }
+resource "azurerm_container_app" "api" {
+  name                         = "ribbitreels-api"
+  container_app_environment_id = azurerm_container_app_environment.aca_env.id
+  resource_group_name          = azurerm_resource_group.main.name
+  location                     = azurerm_resource_group.main.location
+  revision_mode                = "Single"
 
   identity {
     type = "SystemAssigned"
   }
-}
 
+  template {
+    container {
+      name   = "api"
+      image  = "ghcr.io/${var.github_owner}/ribbitreels-api:latest"
+      cpu    = 0.5
+      memory = "1.0Gi"
+
+      env {
+        name  = "ASPNETCORE_ENVIRONMENT"
+        value = "Production"
+      }
+
+      ports {
+        port     = 8080
+        protocol = "TCP"
+      }
+    }
+
+    ingress {
+      external_enabled = true
+      target_port      = 8080
+      transport        = "auto"
+    }
+  }
+
+  registry {
+    server   = "ghcr.io"
+    username = var.github_owner
+    password = var.github_token
+  }
+}
