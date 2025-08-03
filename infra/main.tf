@@ -23,7 +23,7 @@ provider "azurerm" {
   client_secret                    = var.client_secret
   tenant_id                        = var.tenant_id
   subscription_id                  = var.subscription_id
-  resource_provider_registrations = ["Microsoft.App", "Microsoft.ContainerRegistry"]
+  resource_provider_registrations = "Microsoft.App,Microsoft.ContainerRegistry"
 }
 
 resource "azurerm_resource_group" "main" {
