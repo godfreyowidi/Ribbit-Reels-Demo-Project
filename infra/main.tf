@@ -31,13 +31,13 @@ resource "azurerm_linux_web_app" "api_app" {
       docker_image_name   = "ghcr.io/${var.github_owner}/ribbitreels-api:latest"
       docker_registry_url = "https://ghcr.io"
     }
-
-    docker_registry_username = var.github_owner
-    docker_registry_password = var.github_token
   }
 
   app_settings = {
-    WEBSITES_PORT = "8080"
+    WEBSITES_PORT                    = "8080"
+    DOCKER_REGISTRY_SERVER_URL      = "https://ghcr.io"
+    DOCKER_REGISTRY_SERVER_USERNAME = var.github_owner
+    DOCKER_REGISTRY_SERVER_PASSWORD = var.github_token
   }
 
   identity {
