@@ -37,12 +37,16 @@ resource "azurerm_container_app" "api" {
         value = "8080"
       }
     }
-    container_start_command = []
   }
 
   ingress {
     external_enabled = true
     target_port      = 8080
+
+    traffic_weight {
+      percentage      = 100
+      latest_revision = true
+    }
   }
 
   secret {
