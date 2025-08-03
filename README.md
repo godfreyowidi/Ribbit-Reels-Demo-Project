@@ -12,4 +12,4 @@ dotnet ef database update --project ../RibbitReels.Data --startup-project .
 
  dotnet test ./RibbitReels.IntegrationTests/RibbitReels.IntegrationTests.csproj
 
- sqlcmd -S localhost,1433 -U sa -P 'Password123!' -d RibbitReelsDb 
+ sqlcmd -S localhost,1433 -U sa -P 'Password123!' -d RibbitReelsDb

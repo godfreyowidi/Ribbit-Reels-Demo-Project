@@ -35,21 +35,21 @@ jobs:
       GoogleAuth__ClientSecret: ${{ secrets.GOOGLEAUTH__CLIENTSECRET }}
 
     steps:
-      - name: 🛎️ Checkout code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: 🧰 Setup .NET SDK
+      - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      - name: 📦 Restore NuGet dependencies
+      - name: Restore NuGet dependencies
         run: dotnet restore
 
-      - name: 🛠️ Build solution
+      - name: Build solution
         run: dotnet build --no-restore --configuration Release
 
-      - name: 🕒 Wait for SQL Server to be ready
+      - name: Wait for SQL Server to be ready
         run: |
           echo "⏳ Waiting for SQL Server to be ready..."
           for i in {1..30}; do
@@ -58,25 +58,25 @@ jobs:
             sleep 5
           done
 
-      - name: ✅ Run Unit and Integration Tests (migrates DB internally)
+      - name: Run Unit and Integration Tests (migrates DB internally)
         run: dotnet test --no-build --configuration Release
         env:
           DOTNET_ENVIRONMENT: Development
 
-      - name: 🔐 Login to GitHub Container Registry
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🏷️ Set Docker image tag
+      - name: Set Docker image tag
         run: echo "IMAGE_TAG=ghcr.io/${{ github.repository_owner }}/ribbitreels-api:latest" >> $GITHUB_ENV
 
-      - name: 🛠️ Build Docker image
+      - name: Build Docker image
         run: docker build -t $IMAGE_TAG -f RibbitReels.Api/Dockerfile .
 
-      - name: 📤 Push Docker image to GHCR
+      - name: Push Docker image to GHCR
         run: docker push $IMAGE_TAG
 
   deploy:
@@ -84,23 +84,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🛎️ Checkout code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: 🔧 Setup Terraform
+      - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.8.2
 
-      - name: 📦 Terraform Init
+      - name: Terraform Init
         run: terraform init
         working-directory: ./infra
 
-      - name: 🧪 Terraform Validate
+      - name: Terraform Validate
         run: terraform validate
         working-directory: ./infra
 
-      - name: 🚀 Terraform Apply
+      - name: Terraform Apply
         run: terraform apply -auto-approve
         working-directory: ./infra
         env:
