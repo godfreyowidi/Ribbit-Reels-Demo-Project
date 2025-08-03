@@ -12,47 +12,31 @@ resource "azurerm_resource_group" "main" {
   location = "East US"
 }
 
-resource "azurerm_log_analytics_workspace" "log" {
-  name                = "ribbitreels-logs"
+resource "azurerm_container_app_environment" "env" {
+  name                = "ribbitreels-env"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
-  sku                 = "PerGB2018"
-  retention_in_days   = 30
-}
-
-resource "azurerm_container_app_environment" "aca_env" {
-  name                       = "ribbitreels-env"
-  location                   = azurerm_resource_group.main.location
-  resource_group_name        = azurerm_resource_group.main.name
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.log.id
+  sku                 = "Consumption"
 }
 
 resource "azurerm_container_app" "api" {
   name                         = "ribbitreels-api"
-  container_app_environment_id = azurerm_container_app_environment.aca_env.id
+  container_app_environment_id = azurerm_container_app_environment.env.id
   resource_group_name          = azurerm_resource_group.main.name
   location                     = azurerm_resource_group.main.location
   revision_mode                = "Single"
 
-  identity {
-    type = "SystemAssigned"
-  }
-
   template {
-    container {
-      name   = "api"
+    containers {
+      name   = "ribbitreels-api"
       image  = "ghcr.io/${var.github_owner}/ribbitreels-api:latest"
-      cpu    = 0.5
-      memory = "1.0Gi"
-
-      env {
-        name  = "ASPNETCORE_ENVIRONMENT"
-        value = "Production"
+      resources {
+        cpu    = 0.5
+        memory = "1.0Gi"
       }
-
-      ports {
-        port     = 8080
-        protocol = "TCP"
+      env {
+        name  = "WEBSITES_PORT"
+        value = "8080"
       }
     }
 
@@ -63,9 +47,9 @@ resource "azurerm_container_app" "api" {
     }
   }
 
-  registry {
+  registry_credential {
     server   = "ghcr.io"
     username = var.github_owner
-    password = var.github_token
+    secret   = var.github_token
   }
 }
