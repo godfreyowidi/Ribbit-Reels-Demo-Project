@@ -34,13 +34,11 @@ resource "azurerm_linux_web_app" "api_app" {
   }
 
   app_settings = {
-    WEBSITES_PORT                    = "8080"
-    DOCKER_REGISTRY_SERVER_URL      = "https://ghcr.io"
-    DOCKER_REGISTRY_SERVER_USERNAME = var.github_owner
-    DOCKER_REGISTRY_SERVER_PASSWORD = var.github_token
+    WEBSITES_PORT = "8080" # This must match your Dockerfile's EXPOSE
   }
 
   identity {
     type = "SystemAssigned"
   }
 }
+
