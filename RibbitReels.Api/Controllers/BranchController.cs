@@ -97,6 +97,7 @@ public class BranchController : ControllerBase
 
     // GET: api/branch/{id}
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateBranch(Guid id, [FromBody] Branch updatedBranch)
     {
         var result = await _branchService.UpdateBranchAsync(id, updatedBranch);

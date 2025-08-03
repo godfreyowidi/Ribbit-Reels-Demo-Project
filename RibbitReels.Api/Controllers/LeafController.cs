@@ -99,6 +99,7 @@ public class LeafController : ControllerBase
 
     // PUT: /api/leaf/{id}
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateLeaf(Guid id, [FromBody] UpdateLeafRequest request)
     {
         var updatedLeaf = new Leaf
