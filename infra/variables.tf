@@ -3,6 +3,5 @@ variable "client_secret" {}
 variable "tenant_id" {}
 variable "subscription_id" {}
 
-
 variable "github_owner" {}
 variable "github_token" {}
