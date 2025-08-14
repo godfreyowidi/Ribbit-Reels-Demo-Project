@@ -1,5 +1,6 @@
 
 using System.Net;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using RibbitReels.Data;
 using RibbitReels.Data.Models;
@@ -11,33 +12,39 @@ namespace RibbitReels.Services.Implementations;
 public class LeafService : ILeafService
 {
     private readonly AppDbContext _appDbContext;
+    private readonly AzureBlobRepository _blobRepository;
 
-    public LeafService(AppDbContext appDbContext)
+    public LeafService(AppDbContext appDbContext, AzureBlobRepository blobRepository)
     {
         _appDbContext = appDbContext;
+        _blobRepository = blobRepository;
     }
 
-    public async Task<OperationResult<Leaf>> CreateLeafAsync(Guid branchId, Leaf leaf)
+    public async Task<OperationResult<Leaf>> CreateLeafAsync(Guid branchId, Leaf leaf, IFormFile? videoFile = null)
     {
         try
         {
-            // input validation
-            if (string.IsNullOrWhiteSpace(leaf.Title) || string.IsNullOrWhiteSpace(leaf.VideoUrl))
-                return OperationResult<Leaf>.Fail("Leaf must have a title and video URL.", HttpStatusCode.BadRequest);
+            if (string.IsNullOrWhiteSpace(leaf.Title))
+                return OperationResult<Leaf>.Fail("Leaf must have a title.", HttpStatusCode.BadRequest);
 
-            // every leaf have to reference a branch
             var branch = await _appDbContext.Branches.FindAsync(branchId);
             if (branch == null)
                 return OperationResult<Leaf>.Fail("Branch not found.", HttpStatusCode.NotFound);
 
-            // assign the branchId to the leaf
             leaf.BranchId = branchId;
-
-            // initializing id
             if (leaf.Id == Guid.Empty)
                 leaf.Id = Guid.NewGuid();
 
-            // save
+            if (videoFile != null)
+            {
+                var uploadResult = await _blobRepository.UploadVideoAsync(videoFile, leaf.Id.ToString());
+                if (!uploadResult.IsSuccessful)
+                    return OperationResult<Leaf>.Fail("failed to upload file", HttpStatusCode.BadRequest);
+
+                // we store only the relative path in DB
+                leaf.VideoUrl = uploadResult.Value;
+            }
+
             _appDbContext.Leafs.Add(leaf);
             await _appDbContext.SaveChangesAsync();
 
@@ -60,11 +67,18 @@ public class LeafService : ILeafService
             if (leaf == null)
                 return OperationResult<Leaf>.Fail("Leaf not found.", HttpStatusCode.NotFound);
 
+            if (!string.IsNullOrWhiteSpace(leaf.VideoUrl))
+            {
+                var sasResult = await _blobRepository.GetVideoUrlAsync(leaf.VideoUrl);
+                if (sasResult.IsSuccessful)
+                    leaf.VideoUrl = sasResult.Value;
+            }
+
             return OperationResult<Leaf>.Success(leaf, HttpStatusCode.OK);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return OperationResult<Leaf>.Fail("An error occurred while retrieving the leaf.", HttpStatusCode.BadRequest);
+            return OperationResult<Leaf>.Fail($"An error occurred while retrieving the leaf: {ex.Message}", HttpStatusCode.BadRequest);
         }
     }
 
@@ -84,7 +98,6 @@ public class LeafService : ILeafService
             return OperationResult<List<Leaf>>.Fail("Failed to retrieve leaves.", HttpStatusCode.BadRequest);
         }
     }
-
 
     public async Task<OperationResult<List<Leaf>>> GetLeafsByBranchIdAsync(Guid branchId)
     {

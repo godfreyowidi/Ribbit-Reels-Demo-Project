@@ -18,21 +18,21 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
     [Fact]
     public async Task UserCanCompleteBranchFlow()
     {
-        // 1. Login as admin
+        // A. login as admin
         var adminToken = await RegisterAndLoginTestAdminAsync();
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
 
-        // 2. Admin creates a branch
+        // B. admin creates a branch
         var branch = await CreateBranch("Introduction to Sustainable Afforestation", "Learn how to increase forest cover");
 
-        // 3. Admin adds leaves
-        var createdLeaf1 = await CreateLeaf(branch.Id, "What is Afforestation", "How it differs with reforestation", "http://video1.com");
-        var createdLeaf2 = await CreateLeaf(branch.Id, "Methods", "Allowing natural regeneration", "http://video2.com");
+        // C. admin adds leaves
+        var createdLeaf1 = await CreateLeaf(branch.Id, "What is Afforestation");
+        var createdLeaf2 = await CreateLeaf(branch.Id, "Methods");
 
-        // 4. Register user & get userId + token
+        // D. register user & get userId + token
         var (userId, userToken) = await RegisterTestUserAndReturnIdAndTokenAsync();
 
-        // 5. Admin assigns branch to the user
+        // E. admin assigns branch to the user
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
 
         var assignPayload = new
@@ -45,14 +45,14 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
         var assignResponse = await _client.PostAsJsonAsync("/api/UserBranchAssignment/assign", assignPayload);
         Assert.Equal(HttpStatusCode.OK, assignResponse.StatusCode);
 
-        // 6. Switch to learner context
+        // F. switch to learner context
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
 
-        // 7. Learner marks leaf as complete
+        // G. learner marks leaf as complete
         await MarkLeafComplete(branch.Id, createdLeaf1.Id);
         await MarkLeafComplete(branch.Id, createdLeaf2.Id);
 
-        // 8. Check learning progress
+        // H. check learning progress
         var progress = await GetProgress(branch.Id);
         Assert.NotNull(progress);
         Assert.Equal(branch.Id, progress.BranchId);
@@ -75,18 +75,25 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
         return branch;
     }
 
-    private async Task<LeafResponse> CreateLeaf(Guid branchId, string title, string content, string videoUrl)
+    private async Task<LeafResponse> CreateLeaf(Guid branchId, string title)
     {
-        var payload = new
+        var filePath = Path.Combine(AppContext.BaseDirectory, "assets", "video.mp4");
+
+        using var fileStream = File.OpenRead(filePath);
+        var formData = new MultipartFormDataContent
         {
-            Title = title,
-            Content = content,
-            VideoUrl = videoUrl,
-            BranchId = branchId
+            { new StringContent(title), "Title" },
+            { new StringContent("1"), "Order" },
+            { new StreamContent(fileStream), "VideoFile", "video.mp4" },
         };
 
-        var response = await _client.PostAsJsonAsync($"/api/leaf/{branchId}", payload);
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var response = await _client.PostAsync($"/api/branches/{branchId}/leaves", formData);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Status: {response.StatusCode}, Body: {body}");
+        }
 
         var leaf = await response.Content.ReadFromJsonAsync<LeafResponse>();
         Assert.NotNull(leaf);

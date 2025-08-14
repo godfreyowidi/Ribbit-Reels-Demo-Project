@@ -15,6 +15,31 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddEnvironmentVariables();
 
+builder.Services.Configure<AzureBlobConfiguration>(options =>
+{
+    // connection string
+    options.ConnectionString =
+        Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING") ??
+        builder.Configuration.GetConnectionString("AzureBlobStorage") ??
+        string.Empty;
+
+    // fallback to account name + key if no connection string
+    options.AccountName =
+        Environment.GetEnvironmentVariable("AZURE_STORAGE_ACCOUNT") ??
+        builder.Configuration["Azure:AccountName"] ??
+        string.Empty;
+
+    options.AccountKey =
+        Environment.GetEnvironmentVariable("AZURE_STORAGE_KEY") ??
+        builder.Configuration["Azure:AccountKey"] ??
+        string.Empty;
+
+    // Default container name
+    options.ContainerName =
+        builder.Configuration["Azure:ContainerName"] ??
+        "videos";
+});
+
 // JWT Configuration
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var jwtKey = jwtSettings["Key"] ?? throw new InvalidOperationException("JWT Key is missing");
@@ -81,6 +106,8 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserBranchAssignmentService, UserBranchAssignmentService>();
 builder.Services.AddScoped<ILearningProgressService, LearningProgressService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
+builder.Services.AddSingleton<AzureBlobRepository>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

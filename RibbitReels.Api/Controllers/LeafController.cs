@@ -18,26 +18,25 @@ public class LeafController : ControllerBase
         _leafService = leafService;
     }
 
-    // POST : api/leaf/{branchId}
-    [HttpPost("{branchId}")]
+    // POST: api/branches/{branchId}/leaves
+    [HttpPost("/api/branches/{branchId}/leaves")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> CreateLeaf(Guid branchId, [FromBody] CreateLeafRequest request)
+    public async Task<IActionResult> CreateLeaf(Guid branchId, [FromForm] CreateLeafRequest request)
     {
         var leaf = new Leaf
         {
             Id = Guid.NewGuid(),
-            BranchId = request.BranchId,
+            BranchId = branchId,
             Title = request.Title,
-            VideoUrl = request.VideoUrl,
             Order = request.Order
         };
 
-        var result = await _leafService.CreateLeafAsync(branchId, leaf);
+        var result = await _leafService.CreateLeafAsync(branchId, leaf, request.VideoFile);
 
         if (!result.IsSuccessful)
             return StatusCode(result.StatusCode, new { error = result.FailureMessage });
 
-        return StatusCode(result.StatusCode, new LeafResponse
+        return CreatedAtAction(nameof(GetLeafById), new { id = result.Value.Id }, new LeafResponse
         {
             Id = result.Value.Id,
             Title = result.Value.Title,
@@ -47,7 +46,7 @@ public class LeafController : ControllerBase
         });
     }
 
-    // GET: api/{id}
+    // GET: api/leaf/{id}
     [HttpGet("{id}")]
     public async Task<IActionResult> GetLeafById(Guid id)
     {
@@ -57,6 +56,7 @@ public class LeafController : ControllerBase
             return StatusCode(result.StatusCode, new { error = result.FailureMessage });
 
         var leaf = result.Value;
+
         return Ok(new LeafResponse
         {
             Id = leaf.Id,
@@ -67,6 +67,7 @@ public class LeafController : ControllerBase
         });
     }
 
+
     // GET: api/leaf
     [HttpGet]
     [AllowAnonymous]
@@ -76,7 +77,7 @@ public class LeafController : ControllerBase
         return result.IsSuccessful ? Ok(new { data = result.Value }) : BadRequest(result.FailureMessage);
     }
 
-    // GET: api/branch?/{branchId}
+    // GET: api/branch/{branchId}
     [HttpGet("branch/{branchId:guid}")]
     public async Task<IActionResult> GetLeafsByBranchId(Guid branchId)
     {
