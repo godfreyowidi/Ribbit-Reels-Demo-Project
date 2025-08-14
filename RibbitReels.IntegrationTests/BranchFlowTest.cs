@@ -26,8 +26,8 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
         var branch = await CreateBranch("Introduction to Sustainable Afforestation", "Learn how to increase forest cover");
 
         // C. admin adds leaves
-        var createdLeaf1 = await CreateLeaf(branch.Id, "What is Afforestation", "How it differs with reforestation", "http://video1.com");
-        var createdLeaf2 = await CreateLeaf(branch.Id, "Methods", "Allowing natural regeneration", "http://video2.com");
+        var createdLeaf1 = await CreateLeaf(branch.Id, "What is Afforestation", "How it differs with reforestation");
+        var createdLeaf2 = await CreateLeaf(branch.Id, "Methods", "Allowing natural regeneration");
 
         // D. register user & get userId + token
         var (userId, userToken) = await RegisterTestUserAndReturnIdAndTokenAsync();
