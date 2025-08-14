@@ -77,15 +77,17 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
 
     private async Task<LeafResponse> CreateLeaf(Guid branchId, string title, string content, string videoUrl)
     {
-        var payload = new
+        var filePath = Path.Combine(AppContext.BaseDirectory, "assets", "video.mp4");
+
+        using var fileStream = File.OpenRead(filePath);
+        var formData = new MultipartFormDataContent
         {
-            Title = title,
-            Content = content,
-            VideoUrl = videoUrl,
-            BranchId = branchId
+            { new StringContent(title), "Title" },
+            { new StringContent(content), "Content" },
+            { new StreamContent(fileStream), "VideoFIle", "video.mp4" },
         };
 
-        var response = await _client.PostAsJsonAsync($"/api/leaf/{branchId}", payload);
+        var response = await _client.PostAsync($"/api/branches/{branchId}/leaves", formData);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
         var leaf = await response.Content.ReadFromJsonAsync<LeafResponse>();
