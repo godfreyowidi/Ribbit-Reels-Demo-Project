@@ -75,7 +75,7 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
         return branch;
     }
 
-    private async Task<LeafResponse> CreateLeaf(Guid branchId, string title, string content, string videoUrl)
+    private async Task<LeafResponse> CreateLeaf(Guid branchId, string title, string content)
     {
         var filePath = Path.Combine(AppContext.BaseDirectory, "assets", "video.mp4");
 
