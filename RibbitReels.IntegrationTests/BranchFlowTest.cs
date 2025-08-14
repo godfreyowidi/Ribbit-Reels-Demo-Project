@@ -84,7 +84,7 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
         {
             { new StringContent(title), "Title" },
             { new StringContent(content), "Content" },
-            { new StreamContent(fileStream), "VideoFIle", "video.mp4" },
+            { new StreamContent(fileStream), "VideoFile", "video.mp4" },
         };
 
         var response = await _client.PostAsync($"/api/branches/{branchId}/leaves", formData);
@@ -94,6 +94,7 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
         Assert.NotNull(leaf);
         return leaf!;
     }
+
 
     private async Task MarkLeafComplete(Guid branchId, Guid leafId)
     {
