@@ -26,8 +26,8 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
         var branch = await CreateBranch("Introduction to Sustainable Afforestation", "Learn how to increase forest cover");
 
         // C. admin adds leaves
-        var createdLeaf1 = await CreateLeaf(branch.Id, "What is Afforestation", "How it differs with reforestation");
-        var createdLeaf2 = await CreateLeaf(branch.Id, "Methods", "Allowing natural regeneration");
+        var createdLeaf1 = await CreateLeaf(branch.Id, "What is Afforestation");
+        var createdLeaf2 = await CreateLeaf(branch.Id, "Methods");
 
         // D. register user & get userId + token
         var (userId, userToken) = await RegisterTestUserAndReturnIdAndTokenAsync();
@@ -75,7 +75,7 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
         return branch;
     }
 
-    private async Task<LeafResponse> CreateLeaf(Guid branchId, string title, string content)
+    private async Task<LeafResponse> CreateLeaf(Guid branchId, string title)
     {
         var filePath = Path.Combine(AppContext.BaseDirectory, "assets", "video.mp4");
 
@@ -83,18 +83,22 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
         var formData = new MultipartFormDataContent
         {
             { new StringContent(title), "Title" },
-            { new StringContent(content), "Content" },
+            { new StringContent("1"), "Order" },
             { new StreamContent(fileStream), "VideoFile", "video.mp4" },
         };
 
         var response = await _client.PostAsync($"/api/branches/{branchId}/leaves", formData);
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Status: {response.StatusCode}, Body: {body}");
+        }
 
         var leaf = await response.Content.ReadFromJsonAsync<LeafResponse>();
         Assert.NotNull(leaf);
         return leaf!;
     }
-
 
     private async Task MarkLeafComplete(Guid branchId, Guid leafId)
     {
