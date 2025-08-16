@@ -67,6 +67,7 @@ public class UserService : IUserService
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.DisplayName),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role.ToString()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
@@ -81,6 +82,7 @@ public class UserService : IUserService
             expires: DateTime.UtcNow.AddDays(7),
             signingCredentials: credentials
         );
+        Console.WriteLine($"JWT Key (generate): {_configuration["Jwt:Key"]}");
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
