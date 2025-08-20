@@ -82,7 +82,6 @@ public class UserService : IUserService
             expires: DateTime.UtcNow.AddDays(7),
             signingCredentials: credentials
         );
-        Console.WriteLine($"JWT Key (generate): {_configuration["Jwt:Key"]}");
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

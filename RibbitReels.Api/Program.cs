@@ -8,6 +8,9 @@ using RibbitReels.Services.Interfaces;
 using RibbitReels.Services.Implementations;
 using System.Text;
 using RibbitReels.Data.Configs;
+using Microsoft.Extensions.Options;
+using System.Net.Http.Headers;
+using RibbitReels.Services.Configurations;
 
 DotNetEnv.Env.Load();
 
@@ -48,6 +51,31 @@ var jwtAudience = jwtSettings["Audience"] ?? throw new InvalidOperationException
 
 builder.Services.Configure<GoogleAuthConfiguration>(builder.Configuration.GetSection("GoogleAuth"));
 builder.Services.Configure<TestUserOptions>(builder.Configuration.GetSection("Authentication:TestUser"));
+builder.Services.Configure<UdemyConfiguration>(builder.Configuration.GetSection("Udemy"));
+builder.Services.Configure<YouTubeConfiguration>(builder.Configuration.GetSection("YouTube"));
+
+builder.Services.AddHttpClient<YouTubeRepository>();
+
+// Udemy
+builder.Services.AddHttpClient<UdemyRepository>((sp, client) =>
+{
+    var cfg = sp.GetRequiredService<IOptions<UdemyConfiguration>>().Value;
+
+    if (string.IsNullOrWhiteSpace(cfg.BaseUrl))
+    {
+        throw new InvalidOperationException("Udemy BaseUrl is not configured.");
+    }
+
+    client.BaseAddress = new Uri(cfg.BaseUrl);
+
+    var authToken = Convert.ToBase64String(
+        System.Text.Encoding.ASCII.GetBytes($"{cfg.ClientId}:{cfg.ClientSecret}")
+    );
+    client.DefaultRequestHeaders.Authorization =
+        new AuthenticationHeaderValue("Basic", authToken);
+});
+
+
 
 var key = Encoding.UTF8.GetBytes(jwtKey);
 

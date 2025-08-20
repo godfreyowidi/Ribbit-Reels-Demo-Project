@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using RibbitReels.Api.DTOs;
 using RibbitReels.Data.DTOs;
 using RibbitReels.Data.Models;
+using RibbitReels.Services.Implementations;
 using RibbitReels.Services.Interfaces;
 
 namespace RibbitReels.Api.Controllers;
@@ -12,10 +13,12 @@ namespace RibbitReels.Api.Controllers;
 public class LeafController : ControllerBase
 {
     private readonly ILeafService _leafService;
+     private readonly YouTubeRepository _youTubeRepository;
 
-    public LeafController(ILeafService leafService)
+    public LeafController(ILeafService leafService, YouTubeRepository youTubeRepository)
     {
         _leafService = leafService;
+        _youTubeRepository = youTubeRepository;
     }
 
     // POST: api/branches/{branchId}/leaves
@@ -31,7 +34,7 @@ public class LeafController : ControllerBase
             Order = request.Order
         };
 
-        var result = await _leafService.CreateLeafAsync(branchId, leaf, request.VideoFile);
+        var result = await _leafService.CreateManualLeafAsync(branchId, leaf, request.VideoFile);
 
         if (!result.IsSuccessful)
             return StatusCode(result.StatusCode, new { error = result.FailureMessage });
@@ -45,6 +48,50 @@ public class LeafController : ControllerBase
             BranchId = result.Value.BranchId
         });
     }
+
+    [HttpPost("/api/branches/{branchId}/leaves/youtube")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AddYouTubeLeaf(Guid branchId, [FromBody] AddYouTubeLeafRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.VideoId))
+            return BadRequest(new { error = "YT VideoId is required" });
+
+        var videoResult = await _youTubeRepository.GetVideoDetailsAsync(request.VideoId);
+        if (!videoResult.IsSuccessful)
+            return StatusCode(videoResult.StatusCode, new { error = videoResult.FailureMessage });
+
+        var result = await _leafService.CreateYouTubeLeafAsync(branchId, videoResult.Value);
+
+        if (!result.IsSuccessful)
+            return StatusCode(result.StatusCode, new { error = result.FailureMessage });
+
+        var leaf = result.Value;
+
+        return CreatedAtAction(nameof(GetLeafById), new { id = leaf.Id }, new LeafResponse
+        {
+            Id = leaf.Id,
+            BranchId = leaf.BranchId,
+            Title = leaf.Title,
+            Text = leaf.Description ?? string.Empty,
+            VideoUrl = leaf.VideoUrl,
+            ThumbnailUrl = leaf.ThumbnailUrl,
+            Order = leaf.Order,
+            Source = leaf.Source,
+            Status = leaf.Status,
+            CreatedAt = leaf.CreatedAt
+        });
+    }
+
+    [HttpGet("/api/youtube/search")]
+    public async Task<IActionResult> SearchForYoutubeVideo([FromQuery] string q, [FromQuery] int maxResults = 5)
+    {
+        var result = await _youTubeRepository.SearchVideosAsync(q, maxResults);
+        if (!result.IsSuccessful)
+            return StatusCode(result.StatusCode, result.FailureMessage);
+
+        return Ok(result.Value);
+    }
+
 
     // GET: api/leaf/{id}
     [HttpGet("{id}")]

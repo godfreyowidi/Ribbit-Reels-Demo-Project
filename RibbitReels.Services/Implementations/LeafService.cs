@@ -1,8 +1,8 @@
-
 using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using RibbitReels.Data;
+using RibbitReels.Data.DTOs;
 using RibbitReels.Data.Models;
 using RibbitReels.Services.Interfaces;
 using RibbitReels.Services.Shared;
@@ -20,7 +20,7 @@ public class LeafService : ILeafService
         _blobRepository = blobRepository;
     }
 
-    public async Task<OperationResult<Leaf>> CreateLeafAsync(Guid branchId, Leaf leaf, IFormFile? videoFile = null)
+    public async Task<OperationResult<Leaf>> CreateManualLeafAsync(Guid branchId, Leaf leaf, IFormFile? videoFile = null)
     {
         try
         {
@@ -34,6 +34,7 @@ public class LeafService : ILeafService
             leaf.BranchId = branchId;
             if (leaf.Id == Guid.Empty)
                 leaf.Id = Guid.NewGuid();
+            leaf.Source = "Manual";
 
             if (videoFile != null)
             {
@@ -55,6 +56,55 @@ public class LeafService : ILeafService
             return OperationResult<Leaf>.Fail(ex, "Failed to create leaf.");
         }
     }
+
+    public async Task<OperationResult<Leaf>> CreateYouTubeLeafAsync(Guid branchId, YouTubeVideo video)
+    {
+        try
+        {
+            var branch = await _appDbContext.Branches.FindAsync(branchId);
+            if (branch == null)
+                return OperationResult<Leaf>.Fail("Branch not found.", HttpStatusCode.NotFound);
+
+            var videoUrl = $"https://www.youtube.com/watch?v={video.VideoId}";
+
+            // we check if this YT video already exists in/for this branch
+            var existingLeaf = await _appDbContext.Leafs
+                .FirstOrDefaultAsync(l => l.BranchId == branchId && l.VideoUrl == videoUrl);
+
+            if (existingLeaf != null)
+            {
+                return OperationResult<Leaf>.Fail(
+                    "This YouTube video has already been added to the branch.",
+                    HttpStatusCode.Conflict
+                );
+            }
+
+            var leaf = new Leaf
+            {
+                Id = Guid.NewGuid(),
+                BranchId = branchId,
+                Title = video.Title,
+                Description = video.Description,
+                ThumbnailUrl = video.ThumbnailUrl,
+                VideoUrl = videoUrl,
+                Source = "YouTube",
+                Order = await _appDbContext.Leafs
+                    .Where(l => l.BranchId == branchId)
+                    .CountAsync() + 1 // sequential ordering per branch
+            };
+
+            _appDbContext.Leafs.Add(leaf);
+            await _appDbContext.SaveChangesAsync();
+
+            return OperationResult<Leaf>.Success(leaf, HttpStatusCode.Created);
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<Leaf>.Fail(ex, "Failed to create YouTube leaf.");
+        }
+    }
+
+
 
     public async Task<OperationResult<Leaf>> GetLeafByIdAsync(Guid id)
     {
