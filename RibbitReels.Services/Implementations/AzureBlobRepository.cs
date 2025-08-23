@@ -19,7 +19,6 @@ namespace RibbitReels.Services.Implementations
             _containerName = config.ContainerName;
 
             _blobContainerClient = new BlobContainerClient(config.ConnectionString, _containerName);
-            _blobContainerClient.CreateIfNotExists(PublicAccessType.None);
         }
 
         public async Task<OperationResult<string>> UploadVideoAsync(IFormFile file, string leafId)
@@ -29,6 +28,9 @@ namespace RibbitReels.Services.Implementations
 
             try
             {
+                // so we changes to only ensuring container exist only when uploading to cover yt
+                await _blobContainerClient.CreateIfNotExistsAsync(PublicAccessType.None);
+                
                 // relative blob path
                 var blobName = $"leaf_{leafId}/{Guid.NewGuid()}_{file.FileName}";
 

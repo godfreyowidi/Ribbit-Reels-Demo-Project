@@ -21,35 +21,46 @@ public class LeafController : ControllerBase
         _youTubeRepository = youTubeRepository;
     }
 
-    // POST: api/branches/{branchId}/leaves
-    [HttpPost("/api/branches/{branchId}/leaves")]
+      // POST: api/leafs/{branchId}/manual
+    [HttpPost("leafs/{branchId}/manual")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> CreateLeaf(Guid branchId, [FromForm] CreateLeafRequest request)
+    public async Task<IActionResult> CreateManualLeaf(Guid branchId, [FromForm] CreateManualLeafRequest request)
     {
+        if (request.VideoFile == null || request.VideoFile.Length == 0)
+            return BadRequest(new { error = "Video file is required." });
+
         var leaf = new Leaf
         {
             Id = Guid.NewGuid(),
             BranchId = branchId,
             Title = request.Title,
-            Order = request.Order
+            Description = request.Description,
+            Order = request.Order,
+            Source = "Manual"
         };
 
-        var result = await _leafService.CreateManualLeafAsync(branchId, leaf, request.VideoFile);
+        var result = await _leafService.CreateManualLeafAsync(branchId, request);
 
         if (!result.IsSuccessful)
             return StatusCode(result.StatusCode, new { error = result.FailureMessage });
 
-        return CreatedAtAction(nameof(GetLeafById), new { id = result.Value.Id }, new LeafResponse
+        var createdLeaf = result.Value;
+
+        return CreatedAtAction(nameof(GetLeafById), new { id = createdLeaf.Id }, new LeafResponse
         {
-            Id = result.Value.Id,
-            Title = result.Value.Title,
-            VideoUrl = result.Value.VideoUrl,
-            Order = result.Value.Order,
-            BranchId = result.Value.BranchId
+            Id = createdLeaf.Id,
+            BranchId = createdLeaf.BranchId,
+            Title = createdLeaf.Title,
+            Description = createdLeaf.Description ?? string.Empty,
+            VideoUrl = Url.Action(nameof(GetVideo), new { id = createdLeaf.Id }),
+            Order = createdLeaf.Order,
+            Source = createdLeaf.Source,
+            Status = createdLeaf.Status,
+            CreatedAt = createdLeaf.CreatedAt
         });
     }
 
-    [HttpPost("/api/branches/{branchId}/leaves/youtube")]
+    [HttpPost("leafs/{branchId}/youtube")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AddYouTubeLeaf(Guid branchId, [FromBody] AddYouTubeLeafRequest request)
     {
@@ -60,45 +71,35 @@ public class LeafController : ControllerBase
         if (!videoResult.IsSuccessful)
             return StatusCode(videoResult.StatusCode, new { error = videoResult.FailureMessage });
 
-        var result = await _leafService.CreateYouTubeLeafAsync(branchId, videoResult.Value);
+        var ytVideo = videoResult.Value;
 
+        var result = await _leafService.CreateYouTubeLeafAsync(branchId, ytVideo);       
         if (!result.IsSuccessful)
             return StatusCode(result.StatusCode, new { error = result.FailureMessage });
 
-        var leaf = result.Value;
+        var created = result.Value;
 
-        return CreatedAtAction(nameof(GetLeafById), new { id = leaf.Id }, new LeafResponse
+        return CreatedAtAction(nameof(GetLeafById), new { id = created.Id }, new LeafResponse
         {
-            Id = leaf.Id,
-            BranchId = leaf.BranchId,
-            Title = leaf.Title,
-            Text = leaf.Description ?? string.Empty,
-            VideoUrl = leaf.VideoUrl,
-            ThumbnailUrl = leaf.ThumbnailUrl,
-            Order = leaf.Order,
-            Source = leaf.Source,
-            Status = leaf.Status,
-            CreatedAt = leaf.CreatedAt
+            Id = created.Id,
+            BranchId = created.BranchId,
+            Title = created.Title,
+            Description = created.Description ?? string.Empty,
+            VideoUrl = null,
+            ThumbnailUrl = created.ThumbnailUrl,
+            Order = created.Order,
+            Source = created.Source,
+            YouTubeVideoId = created.YouTubeVideoId,
+            Status = created.Status,
+            CreatedAt = created.CreatedAt
         });
     }
-
-    [HttpGet("/api/youtube/search")]
-    public async Task<IActionResult> SearchForYoutubeVideo([FromQuery] string q, [FromQuery] int maxResults = 5)
-    {
-        var result = await _youTubeRepository.SearchVideosAsync(q, maxResults);
-        if (!result.IsSuccessful)
-            return StatusCode(result.StatusCode, result.FailureMessage);
-
-        return Ok(result.Value);
-    }
-
 
     // GET: api/leaf/{id}
     [HttpGet("{id}")]
     public async Task<IActionResult> GetLeafById(Guid id)
     {
         var result = await _leafService.GetLeafByIdAsync(id);
-
         if (!result.IsSuccessful)
             return StatusCode(result.StatusCode, new { error = result.FailureMessage });
 
@@ -107,11 +108,33 @@ public class LeafController : ControllerBase
         return Ok(new LeafResponse
         {
             Id = leaf.Id,
+            BranchId = leaf.BranchId,
+            Description = leaf.Description ?? string.Empty,
             Title = leaf.Title,
-            VideoUrl = leaf.VideoUrl,
+            VideoUrl = leaf.Source == "Manual" ? Url.Action(nameof(GetVideo), new { id = leaf.Id }) : null,
+            ThumbnailUrl = leaf.ThumbnailUrl,
             Order = leaf.Order,
-            BranchId = leaf.BranchId
+            Source = leaf.Source,
+            YouTubeVideoId = leaf.YouTubeVideoId,
+            Status = leaf.Status,
+            CreatedAt = leaf.CreatedAt
         });
+    }
+
+    // GET: api/leaf/{id}/video
+    [HttpGet("{id}/video")]
+    public async Task<IActionResult> GetVideo(Guid id)
+    {
+        var result = await _leafService.GetLeafByIdAsync(id);
+        if (!result.IsSuccessful)
+            return StatusCode(result.StatusCode, new { error = result.FailureMessage });
+
+        var leaf = result.Value;
+
+        if (leaf.VideoData == null)
+            return NotFound(new { error = result.FailureMessage });
+
+        return File(leaf.VideoData, leaf.VideoContentType ?? "application/octet-stream", leaf.VideoFileName);
     }
 
 
@@ -138,7 +161,6 @@ public class LeafController : ControllerBase
             Id = leaf.Id,
             BranchId = leaf.BranchId,
             Title = leaf.Title,
-            VideoUrl = leaf.VideoUrl,
             Order = leaf.Order
         }).ToList();
 
@@ -153,7 +175,6 @@ public class LeafController : ControllerBase
         var updatedLeaf = new Leaf
         {
             Title = request.Title,
-            VideoUrl = request.VideoUrl,
             Order = request.Order
         };
 
@@ -168,7 +189,6 @@ public class LeafController : ControllerBase
             Id = leaf.Id,
             BranchId = leaf.BranchId,
             Title = leaf.Title,
-            VideoUrl = leaf.VideoUrl,
             Order = leaf.Order
         });
     }

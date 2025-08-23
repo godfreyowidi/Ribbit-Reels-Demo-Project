@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Http;
+using RibbitReels.Api.DTOs;
 using RibbitReels.Data.DTOs;
 using RibbitReels.Data.Models;
 using RibbitReels.Services.Shared;
@@ -6,7 +6,7 @@ using RibbitReels.Services.Shared;
 namespace RibbitReels.Services.Interfaces;
 public interface ILeafService
 {
-    Task<OperationResult<Leaf>> CreateManualLeafAsync(Guid branchId, Leaf leaf, IFormFile file);
+    Task<OperationResult<Leaf>> CreateManualLeafAsync(Guid branchId, CreateManualLeafRequest request);
     Task<OperationResult<Leaf>> CreateYouTubeLeafAsync(Guid branchId, YouTubeVideo video);
     Task<OperationResult<Leaf>> GetLeafByIdAsync(Guid id);
     Task<OperationResult<List<Leaf>>> GetLeafsAsync();

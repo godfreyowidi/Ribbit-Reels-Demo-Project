@@ -99,7 +99,6 @@ public class UserBranchAssignmentService : IUserBranchAssignmentService
                             Id = l.Id,
                             BranchId = l.BranchId,
                             Title = l.Title,
-                            VideoUrl = l.VideoUrl,
                             Order = l.Order
                         }).ToList()
                 }

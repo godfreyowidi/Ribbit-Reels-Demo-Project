@@ -20,13 +20,15 @@ public class YouTubeRepository
         _httpClient = httpClient;
     }
 
-
-    public async Task<OperationResult<List<YouTubeVideo>>> SearchVideosAsync(string subject, int maxResults = 5)
+    public async Task<OperationResult<YouTubeSearchResult>> SearchVideosAsync(
+        string subject,
+        int maxResults = 5,
+        string? pageToken = null)
     {
         try
         {
             if (string.IsNullOrWhiteSpace(subject))
-                return OperationResult<List<YouTubeVideo>>.Fail("Subject cannot be empty.", HttpStatusCode.BadRequest);
+                return OperationResult<YouTubeSearchResult>.Fail("Subject cannot be empty.", HttpStatusCode.BadRequest);
 
             var url = $"{_youTubeConfig.BaseUrl}/search" +
                       $"?q={Uri.EscapeDataString(subject)}" +
@@ -36,36 +38,45 @@ public class YouTubeRepository
                       $"&maxResults={maxResults}" +
                       $"&key={_youTubeConfig.ApiKey}";
 
+            if (!string.IsNullOrEmpty(pageToken))
+                url += $"&pageToken={pageToken}";
+
             var response = await _httpClient.GetAsync(url);
 
+            var responseString = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"[YT Repo] Raw JSON: {responseString}");
+
             if (!response.IsSuccessStatusCode)
-                return OperationResult<List<YouTubeVideo>>.Fail($"YouTube API error: {response.StatusCode}", HttpStatusCode.BadGateway);
-
-            using var stream = await response.Content.ReadAsStreamAsync();
-            var json = await JsonDocument.ParseAsync(stream);
-
-            var items = json.RootElement.GetProperty("items");
-            var results = new List<YouTubeVideo>();
-
-            foreach (var item in items.EnumerateArray())
             {
-                var videoId = item.GetProperty("id").GetProperty("videoId").GetString();
-                var snippet = item.GetProperty("snippet");
-
-                results.Add(new YouTubeVideo
-                {
-                    VideoId = videoId!,
-                    Title = snippet.GetProperty("title").GetString() ?? "Untitled",
-                    Description = snippet.GetProperty("description").GetString() ?? string.Empty,
-                    ThumbnailUrl = snippet.GetProperty("thumbnails").GetProperty("high").GetProperty("url").GetString()
-                });
+                return OperationResult<YouTubeSearchResult>.Fail(
+                    $"YT API error: {response.StatusCode}, Body: {responseString}",
+                    HttpStatusCode.BadGateway);
             }
 
-            return OperationResult<List<YouTubeVideo>>.Success(results);
+            using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(responseString));
+            var data = await JsonSerializer.DeserializeAsync<YouTubeSearchResponse>(stream);
+
+            if (data?.Items == null || data.Items.Length == 0)
+                return OperationResult<YouTubeSearchResult>.Fail("No videos found.", HttpStatusCode.NotFound);
+
+            var results = data.Items.Select(item => new YouTubeVideo
+            {
+                VideoId = item.Id?.VideoId ?? string.Empty,
+                Title = item.Snippet?.Title ?? "Untitled",
+                Description = item.Snippet?.Description ?? string.Empty,
+                ThumbnailUrl = GetBestThumbnail(item.Snippet?.Thumbnails),
+            }).ToList();
+
+            var searchResult = new YouTubeSearchResult(
+                results,
+                data.NextPageToken,
+                data.PrevPageToken);
+
+            return OperationResult<YouTubeSearchResult>.Success(searchResult);
         }
         catch (Exception ex)
         {
-            return OperationResult<List<YouTubeVideo>>.Fail(ex, "Failed to fetch tutorials from YouTube.");
+            return OperationResult<YouTubeSearchResult>.Fail(ex, "Failed to fetch tutorials from YouTube.");
         }
     }
 
@@ -82,25 +93,29 @@ public class YouTubeRepository
                       $"&key={_youTubeConfig.ApiKey}";
 
             var response = await _httpClient.GetAsync(url);
+            var responseString = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"[YT Repo] Video Details JSON: {responseString}");
 
             if (!response.IsSuccessStatusCode)
-                return OperationResult<YouTubeVideo>.Fail($"YouTube API error: {response.StatusCode}", HttpStatusCode.BadGateway);
+            {
+                return OperationResult<YouTubeVideo>.Fail(
+                    $"YT API error: {response.StatusCode}, Body: {responseString}",
+                    HttpStatusCode.BadGateway);
+            }
 
-            using var stream = await response.Content.ReadAsStreamAsync();
-            var json = await JsonDocument.ParseAsync(stream);
+            using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(responseString));
+            var data = await JsonSerializer.DeserializeAsync<YouTubeVideoDetailsResponse>(stream);
 
-            var items = json.RootElement.GetProperty("items");
-            if (items.GetArrayLength() == 0)
+            if (data?.Items == null || data.Items.Length == 0)
                 return OperationResult<YouTubeVideo>.Fail("Video not found.", HttpStatusCode.NotFound);
 
-            var snippet = items[0].GetProperty("snippet");
-
+            var snippet = data.Items[0].Snippet;
             var video = new YouTubeVideo
             {
                 VideoId = videoId,
-                Title = snippet.GetProperty("title").GetString() ?? "Untitled",
-                Description = snippet.GetProperty("description").GetString() ?? string.Empty,
-                ThumbnailUrl = snippet.GetProperty("thumbnails").GetProperty("high").GetProperty("url").GetString()
+                Title = snippet?.Title ?? "Untitled",
+                Description = snippet?.Description ?? string.Empty,
+                ThumbnailUrl = GetBestThumbnail(snippet?.Thumbnails),
             };
 
             return OperationResult<YouTubeVideo>.Success(video);
@@ -109,5 +124,13 @@ public class YouTubeRepository
         {
             return OperationResult<YouTubeVideo>.Fail(ex, "Failed to fetch video details from YouTube.");
         }
+    }
+
+    private static string GetBestThumbnail(YouTubeThumbnails? thumbnails)
+    {
+        return thumbnails?.High?.Url
+            ?? thumbnails?.Medium?.Url
+            ?? thumbnails?.Default?.Url
+            ?? string.Empty;
     }
 }
