@@ -44,7 +44,6 @@ public class YouTubeRepository
             var response = await _httpClient.GetAsync(url);
 
             var responseString = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"[YT Repo] Raw JSON: {responseString}");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -94,7 +93,6 @@ public class YouTubeRepository
 
             var response = await _httpClient.GetAsync(url);
             var responseString = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"[YT Repo] Video Details JSON: {responseString}");
 
             if (!response.IsSuccessStatusCode)
             {
