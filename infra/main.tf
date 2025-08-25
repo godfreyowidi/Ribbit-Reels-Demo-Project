@@ -10,7 +10,7 @@ terraform {
 
   backend "azurerm" {
     resource_group_name  = "ribbitreels-rg"
-    storage_account_name = "ribbitreelstfstate"
+    storage_account_name = "ribbitreelstfstatev2"
     container_name       = "tfstate"
     key                  = "infra.terraform.tfstate"
   }
@@ -27,7 +27,7 @@ provider "azurerm" {
   client_secret                    = var.client_secret
   tenant_id                        = var.tenant_id
   subscription_id                  = var.subscription_id
-  resource_provider_registrations = "all"
+  resource_provider_registrations  = "all"
 }
 
 resource "azurerm_resource_group" "main" {

@@ -53,6 +53,19 @@ public class UserBranchAssignmentController : ControllerBase
         return Ok(result.Value);
     }
 
+     // GET: api/UserBranchAssignment/all
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllAssignments()
+    {
+        var result = await _assignmentService.GetAllAssignmentsAsync();
+
+        if (!result.IsSuccessful)
+            return StatusCode(result.StatusCode, new { error = result.FailureMessage });
+
+        return Ok(result.Value);
+    }
+
     // GET: api/UserBranchAssignment/manager/{managerId}
     [HttpGet("manager/{managerId}")]
     [Authorize(Roles = "Admin")]
