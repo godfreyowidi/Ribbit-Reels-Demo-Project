@@ -34,8 +34,4 @@
     <ProjectReference Include="..\RibbitReels.Api\RibbitReels.Api.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="..\assets\video.mp4" Link="assets\video.mp4" CopyToOutputDirectory="Always" />
-  </ItemGroup>
-
 </Project>
