@@ -6,6 +6,8 @@ using RibbitReels.Data.DTOs;
 
 namespace RibbitReels.IntegrationTests.Branches;
 
+// switched to in-memory - no test now touches db/azure
+
 public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
 {
     private readonly HttpClient _client;
