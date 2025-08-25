@@ -60,33 +60,28 @@ resource "azurerm_container_app" "api" {
 
       # Bind environment variables to secrets
       env {
-        name       = "Jwt__Key"
-        secret_ref = "jwt-key"
+        name        = "Jwt__Key"
+        secret_name = "jwt-key"
       }
-
       env {
-        name       = "Jwt__Issuer"
-        secret_ref = "jwt-issuer"
+        name        = "Jwt__Issuer"
+        secret_name = "jwt-issuer"
       }
-
       env {
-        name       = "Jwt__Audience"
-        secret_ref = "jwt-audience"
+        name        = "Jwt__Audience"
+        secret_name = "jwt-audience"
       }
-
       env {
-        name       = "Jwt__ExpireMinutes"
-        secret_ref = "jwt-expireminutes"
+        name        = "Jwt__ExpireMinutes"
+        secret_name = "jwt-expireminutes"
       }
-
       env {
-        name       = "GoogleAuth__ClientId"
-        secret_ref = "google-clientid"
+        name        = "GoogleAuth__ClientId"
+        secret_name = "google-clientid"
       }
-
       env {
-        name       = "GoogleAuth__ClientSecret"
-        secret_ref = "google-clientsecret"
+        name        = "GoogleAuth__ClientSecret"
+        secret_name = "google-clientsecret"
       }
     }
   }
@@ -102,41 +97,15 @@ resource "azurerm_container_app" "api" {
   }
 
   # App secrets
-  secret {
-    name  = "jwt-key"
-    value = var.jwt_key
-  }
-
-  secret {
-    name  = "jwt-issuer"
-    value = var.jwt_issuer
-  }
-
-  secret {
-    name  = "jwt-audience"
-    value = var.jwt_audience
-  }
-
-  secret {
-    name  = "jwt-expireminutes"
-    value = var.jwt_expireminutes
-  }
-
-  secret {
-    name  = "google-clientid"
-    value = var.google_clientid
-  }
-
-  secret {
-    name  = "google-clientsecret"
-    value = var.google_clientsecret
-  }
+  secret { name = "jwt-key"             value = var.jwt_key }
+  secret { name = "jwt-issuer"          value = var.jwt_issuer }
+  secret { name = "jwt-audience"        value = var.jwt_audience }
+  secret { name = "jwt-expireminutes"   value = var.jwt_expireminutes }
+  secret { name = "google-clientid"     value = var.google_clientid }
+  secret { name = "google-clientsecret" value = var.google_clientsecret }
 
   # Registry auth
-  secret {
-    name  = "ghcr-token"
-    value = var.github_token
-  }
+  secret { name = "ghcr-token" value = var.github_token }
 
   registry {
     server               = "ghcr.io"
