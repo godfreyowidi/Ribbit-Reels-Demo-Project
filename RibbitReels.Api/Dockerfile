@@ -14,6 +14,7 @@ COPY RibbitReels.Data/*.csproj RibbitReels.Data/
 COPY RibbitReels.Services/*.csproj RibbitReels.Services/
 COPY RibbitReels.UnitTests/*.csproj RibbitReels.UnitTests/
 COPY RibbitReels.IntegrationTests/*.csproj RibbitReels.IntegrationTests/
+COPY RibbitReels.Benchmarks/*.csproj ./RibbitReels.Benchmarks/ 
 
 # restore all projects
 RUN dotnet restore

@@ -10,7 +10,7 @@ terraform {
 
   backend "azurerm" {
     resource_group_name  = "ribbitreels-rg"
-    storage_account_name = "ribbitreelstfstate"
+    storage_account_name = "ribbitreelstfstatev2"
     container_name       = "tfstate"
     key                  = "infra.terraform.tfstate"
   }
@@ -23,11 +23,10 @@ provider "azurerm" {
     }
   }
 
-  client_id                        = var.client_id
-  client_secret                    = var.client_secret
-  tenant_id                        = var.tenant_id
-  subscription_id                  = var.subscription_id
-  resource_provider_registrations = "all"
+  client_id       = var.client_id
+  client_secret   = var.client_secret
+  tenant_id       = var.tenant_id
+  subscription_id = var.subscription_id
 }
 
 resource "azurerm_resource_group" "main" {
@@ -56,14 +55,40 @@ resource "azurerm_container_app" "api" {
 
       env {
         name  = "WEBSITES_PORT"
-        value = "8080"
+        value = "80"
+      }
+
+      # Bind environment variables to secrets
+      env {
+        name        = "Jwt__Key"
+        secret_name = "jwt-key"
+      }
+      env {
+        name        = "Jwt__Issuer"
+        secret_name = "jwt-issuer"
+      }
+      env {
+        name        = "Jwt__Audience"
+        secret_name = "jwt-audience"
+      }
+      env {
+        name        = "Jwt__ExpireMinutes"
+        secret_name = "jwt-expireminutes"
+      }
+      env {
+        name        = "GoogleAuth__ClientId"
+        secret_name = "google-clientid"
+      }
+      env {
+        name        = "GoogleAuth__ClientSecret"
+        secret_name = "google-clientsecret"
       }
     }
   }
 
   ingress {
     external_enabled = true
-    target_port      = 8080
+    target_port      = 80
 
     traffic_weight {
       percentage      = 100
@@ -71,6 +96,38 @@ resource "azurerm_container_app" "api" {
     }
   }
 
+  # App secrets
+  secret {
+    name  = "jwt-key"
+    value = var.jwt_key
+  }
+
+  secret {
+    name  = "jwt-issuer"
+    value = var.jwt_issuer
+  }
+
+  secret {
+    name  = "jwt-audience"
+    value = var.jwt_audience
+  }
+
+  secret {
+    name  = "jwt-expireminutes"
+    value = var.jwt_expireminutes
+  }
+
+  secret {
+    name  = "google-clientid"
+    value = var.google_clientid
+  }
+
+  secret {
+    name  = "google-clientsecret"
+    value = var.google_clientsecret
+  }
+
+  # Registry auth
   secret {
     name  = "ghcr-token"
     value = var.github_token
