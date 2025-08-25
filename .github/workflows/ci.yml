@@ -36,7 +36,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
@@ -85,29 +85,25 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.8.2
+          terraform_version: 1.8.5
 
       - name: Terraform Init
-        run: terraform init
         working-directory: ./infra
+        run: terraform init
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
 
-      - name: Terraform Validate
-        run: terraform validate
+      - name: Terraform Plan
         working-directory: ./infra
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
-        working-directory: ./infra
+        run: terraform plan
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
@@ -119,3 +115,30 @@ jobs:
           TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
           TF_VAR_github_owner: ${{ github.repository_owner }}
           TF_VAR_github_token: ${{ secrets.GITHUB_TOKEN }}
+          TF_VAR_jwt_key: ${{ secrets.JWT__KEY }}
+          TF_VAR_jwt_issuer: ${{ secrets.JWT__ISSUER }}
+          TF_VAR_jwt_audience: ${{ secrets.JWT__AUDIENCE }}
+          TF_VAR_jwt_expireminutes: ${{ secrets.JWT__EXPIREMINUTES }}
+          TF_VAR_google_clientid: ${{ secrets.GOOGLEAUTH__CLIENTID }}
+          TF_VAR_google_clientsecret: ${{ secrets.GOOGLEAUTH__CLIENTSECRET }}
+
+      - name: Terraform Apply
+        working-directory: ./infra
+        run: terraform apply -auto-approve
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          TF_VAR_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+          TF_VAR_client_secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          TF_VAR_github_owner: ${{ github.repository_owner }}
+          TF_VAR_github_token: ${{ secrets.GITHUB_TOKEN }}
+          TF_VAR_jwt_key: ${{ secrets.JWT__KEY }}
+          TF_VAR_jwt_issuer: ${{ secrets.JWT__ISSUER }}
+          TF_VAR_jwt_audience: ${{ secrets.JWT__AUDIENCE }}
+          TF_VAR_jwt_expireminutes: ${{ secrets.JWT__EXPIREMINUTES }}
+          TF_VAR_google_clientid: ${{ secrets.GOOGLEAUTH__CLIENTID }}
+          TF_VAR_google_clientsecret: ${{ secrets.GOOGLEAUTH__CLIENTSECRET }}

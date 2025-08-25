@@ -16,6 +16,12 @@ DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(8080);
+});
+
+
 builder.Configuration.AddEnvironmentVariables();
 
 builder.Services.Configure<AzureBlobConfiguration>(options =>

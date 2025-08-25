@@ -23,11 +23,10 @@ provider "azurerm" {
     }
   }
 
-  client_id                        = var.client_id
-  client_secret                    = var.client_secret
-  tenant_id                        = var.tenant_id
-  subscription_id                  = var.subscription_id
-  resource_provider_registrations  = "all"
+  client_id       = var.client_id
+  client_secret   = var.client_secret
+  tenant_id       = var.tenant_id
+  subscription_id = var.subscription_id
 }
 
 resource "azurerm_resource_group" "main" {
@@ -56,14 +55,22 @@ resource "azurerm_container_app" "api" {
 
       env {
         name  = "WEBSITES_PORT"
-        value = "8080"
+        value = "80"
       }
+
+      # Bind environment variables to secrets
+      env { name = "Jwt__Key"            secret_ref = "jwt-key" }
+      env { name = "Jwt__Issuer"         secret_ref = "jwt-issuer" }
+      env { name = "Jwt__Audience"       secret_ref = "jwt-audience" }
+      env { name = "Jwt__ExpireMinutes"  secret_ref = "jwt-expireminutes" }
+      env { name = "GoogleAuth__ClientId"     secret_ref = "google-clientid" }
+      env { name = "GoogleAuth__ClientSecret" secret_ref = "google-clientsecret" }
     }
   }
 
   ingress {
     external_enabled = true
-    target_port      = 8080
+    target_port      = 80
 
     traffic_weight {
       percentage      = 100
@@ -71,10 +78,16 @@ resource "azurerm_container_app" "api" {
     }
   }
 
-  secret {
-    name  = "ghcr-token"
-    value = var.github_token
-  }
+  # App secrets
+  secret { name = "jwt-key"            value = var.jwt_key }
+  secret { name = "jwt-issuer"         value = var.jwt_issuer }
+  secret { name = "jwt-audience"       value = var.jwt_audience }
+  secret { name = "jwt-expireminutes"  value = var.jwt_expireminutes }
+  secret { name = "google-clientid"    value = var.google_clientid }
+  secret { name = "google-clientsecret" value = var.google_clientsecret }
+
+  # Registry auth
+  secret { name = "ghcr-token" value = var.github_token }
 
   registry {
     server               = "ghcr.io"
