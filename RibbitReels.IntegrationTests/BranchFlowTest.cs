@@ -34,14 +34,12 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
 
         // E. admin assigns branch to the user
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
-
         var assignPayload = new
         {
             UserId = userId,
             BranchId = branch.Id,
             AssignedByManagerId = await GetUserIdFromTokenAsync(adminToken)
         };
-
         var assignResponse = await _client.PostAsJsonAsync("/api/UserBranchAssignment/assign", assignPayload);
         Assert.Equal(HttpStatusCode.OK, assignResponse.StatusCode);
 
@@ -63,38 +61,24 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
 
     private async Task<BranchResponse> CreateBranch(string title, string description)
     {
-        var payload = new { Title = title, Description = description };
-        var response = await _client.PostAsJsonAsync("/api/branch", payload);
-
+        var response = await _client.PostAsJsonAsync("/api/branch", new { Title = title, Description = description });
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-
         var branch = await response.Content.ReadFromJsonAsync<BranchResponse>();
         Assert.NotNull(branch);
-        Assert.NotEqual(Guid.Empty, branch!.Id);
-
-        return branch;
+        return branch!;
     }
 
     private async Task<LeafResponse> CreateLeaf(Guid branchId, string title)
     {
-        var filePath = Path.Combine(AppContext.BaseDirectory, "assets", "video.mp4");
-
-        using var fileStream = File.OpenRead(filePath);
         var formData = new MultipartFormDataContent
         {
             { new StringContent(title), "Title" },
             { new StringContent("1"), "Order" },
-            { new StreamContent(fileStream), "VideoFile", "video.mp4" },
+            { new ByteArrayContent([0]), "VideoFile", "video.mp4" }
         };
 
-        var response = await _client.PostAsync($"/api/branches/{branchId}/leaves", formData);
-
-        if (response.StatusCode != HttpStatusCode.Created)
-        {
-            var body = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Status: {response.StatusCode}, Body: {body}");
-        }
-
+        var response = await _client.PostAsync($"/api/leaf/{branchId}/manual", formData);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var leaf = await response.Content.ReadFromJsonAsync<LeafResponse>();
         Assert.NotNull(leaf);
         return leaf!;
@@ -102,31 +86,19 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
 
     private async Task MarkLeafComplete(Guid branchId, Guid leafId)
     {
-        var payload = new
-        {
-            BranchId = branchId,
-            CompletedLeafIds = new List<Guid> { leafId }
-        };
+        var payload = new { BranchId = branchId, CompletedLeafIds = new List<Guid> { leafId } };
 
-        var response = await _client.PutAsJsonAsync("/api/UserLearningProgress", payload);
-
-        if (response.StatusCode != HttpStatusCode.OK)
-        {
-            var content = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"ERROR: {response.StatusCode} => {content}");
-        }
-
+        var response = await _client.PutAsJsonAsync("/api/UserLearningProgress/progress", payload);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     private async Task<LearningProgressResponse> GetProgress(Guid branchId)
     {
-        var response = await _client.GetAsync($"/api/UserLearningProgress?branchId={branchId}");
+        var response = await _client.GetAsync($"/api/UserLearningProgress/progress?branchId={branchId}");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var progress = await response.Content.ReadFromJsonAsync<LearningProgressResponse>();
         Assert.NotNull(progress);
-
         return progress!;
     }
 
@@ -134,23 +106,19 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
     {
         var testEmail = $"user-{Guid.NewGuid()}@test.com";
         var password = "StrongP@ssw0rd!";
-
-        var registerPayload = new
+        var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", new
         {
             Email = testEmail,
             Password = password,
             ConfirmPassword = password,
             DisplayName = "Assigned User"
-        };
-
-        var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerPayload);
+        });
         Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
 
         var registerData = await registerResponse.Content.ReadFromJsonAsync<JsonElement>();
         var userId = Guid.Parse(registerData.GetProperty("userId").GetString()!);
 
-        var loginPayload = new { Email = testEmail, Password = password };
-        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginPayload);
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new { Email = testEmail, Password = password });
         Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
 
         var loginResult = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>();
@@ -162,29 +130,20 @@ public class BranchFlowTests : IClassFixture<IntegrationTestFactory>
         var testEmail = $"admin-{Guid.NewGuid()}@test.com";
         var password = "AdminTest123!";
 
-        var registerPayload = new
+        var registerResponse = await _client.PostAsJsonAsync("/api/auth/register-admin", new
         {
             Email = testEmail,
             DisplayName = "CI Test Admin",
             Password = password,
             ConfirmPassword = password
-        };
-
-        var registerResponse = await _client.PostAsJsonAsync("/api/auth/register-admin", registerPayload);
+        });
         Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
 
-        var loginPayload = new
-        {
-            Email = testEmail,
-            Password = password
-        };
-
-        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginPayload);
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new { Email = testEmail, Password = password });
         Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
 
         var loginResult = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>();
         Assert.NotNull(loginResult?.Token);
-
         return loginResult!.Token!;
     }
 

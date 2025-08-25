@@ -3,12 +3,13 @@ using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using RibbitReels.Data.Configs;
+using RibbitReels.Services.Interfaces;
 using RibbitReels.Services.Shared;
 using System.Net;
 
 namespace RibbitReels.Services.Implementations
 {
-    public class AzureBlobRepository
+    public class AzureBlobRepository : IAzureBlobRepository
     {
         private readonly string _containerName;
         private readonly BlobContainerClient _blobContainerClient;

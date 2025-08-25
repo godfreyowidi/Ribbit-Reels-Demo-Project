@@ -1,5 +1,4 @@
 using System.Net;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using RibbitReels.Api.DTOs;
 using RibbitReels.Data;
@@ -13,21 +12,21 @@ namespace RibbitReels.Services.Implementations;
 public class LeafService : ILeafService
 {
     private readonly AppDbContext _appDbContext;
-    private readonly AzureBlobRepository _blobRepository;
+    private readonly IAzureBlobRepository _blobRepository;
 
-    public LeafService(AppDbContext appDbContext, AzureBlobRepository blobRepository)
+    public LeafService(AppDbContext appDbContext, IAzureBlobRepository blobRepository)
     {
         _appDbContext = appDbContext;
         _blobRepository = blobRepository;
     }
 
-    public async Task<OperationResult<Leaf>> CreateManualLeafAsync(Guid branchId, CreateManualLeafRequest request)
+    public async Task<OperationResult<LeafResponse>> CreateManualLeafAsync(Guid branchId, CreateManualLeafRequest request)
     {
         try
         {
             var branch = await _appDbContext.Branches.FindAsync(branchId);
             if (branch == null)
-                return OperationResult<Leaf>.Fail("Branch not found.", HttpStatusCode.NotFound);
+                return OperationResult<LeafResponse>.Fail("Branch not found.", HttpStatusCode.NotFound);
 
             var nextOrder = request.Order > 0
                 ? request.Order
@@ -37,8 +36,12 @@ public class LeafService : ILeafService
             {
                 Id = Guid.NewGuid(),
                 BranchId = branchId,
-                Title = string.IsNullOrWhiteSpace(request.Title) ? "Untitled Video" : request.Title[..Math.Min(255, request.Title.Length)],
-                Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description[..Math.Min(2000, request.Description.Length)],
+                Title = string.IsNullOrWhiteSpace(request.Title)
+                    ? "Untitled Video"
+                    : request.Title[..Math.Min(255, request.Title.Length)],
+                Description = string.IsNullOrWhiteSpace(request.Description)
+                    ? null
+                    : request.Description[..Math.Min(2000, request.Description.Length)],
                 Source = "Manual",
                 Status = "Published",
                 Order = nextOrder,
@@ -47,38 +50,42 @@ public class LeafService : ILeafService
 
             if (request.VideoFile != null)
             {
-                using var ms = new MemoryStream();
-                await request.VideoFile.CopyToAsync(ms);
+                // we upload to Azure Blob
+                var uploadResult = await _blobRepository.UploadVideoAsync(request.VideoFile, leaf.Id.ToString());
+                if (!uploadResult.IsSuccessful)
+                    return OperationResult<LeafResponse>.Fail(uploadResult.FailureMessage ?? "Video upload failed.", HttpStatusCode.BadRequest);
 
-                leaf.VideoData = ms.ToArray();
-                leaf.VideoFileName = $"{Guid.NewGuid()}{Path.GetExtension(request.VideoFile.FileName)}";
+                // then store blob metadata
+                leaf.VideoFileName = request.VideoFile.FileName;
                 leaf.VideoContentType = request.VideoFile.ContentType;
+                leaf.VideoBlobPath = uploadResult.Value;
             }
 
             _appDbContext.Leafs.Add(leaf);
             await _appDbContext.SaveChangesAsync();
 
-            return OperationResult<Leaf>.Success(leaf, HttpStatusCode.Created);
+            var response = await MapToResponseAsync(leaf);
+            return OperationResult<LeafResponse>.Success(response, HttpStatusCode.Created);
         }
         catch (Exception ex)
         {
-            return OperationResult<Leaf>.Fail(ex, "Failed to create manual leaf.");
+            return OperationResult<LeafResponse>.Fail(ex, "Failed to create manual leaf.");
         }
     }
 
-    public async Task<OperationResult<Leaf>> CreateYouTubeLeafAsync(Guid branchId, YouTubeVideo video)
+    public async Task<OperationResult<LeafResponse>> CreateYouTubeLeafAsync(Guid branchId, YouTubeVideo video)
     {
         try
         {
             var branch = await _appDbContext.Branches.FindAsync(branchId);
             if (branch == null)
-                return OperationResult<Leaf>.Fail("Branch not found.", HttpStatusCode.NotFound);
+                return OperationResult<LeafResponse>.Fail("Branch not found.", HttpStatusCode.NotFound);
 
-            // check for duplicates
+            // prevent duplicates
             var exists = await _appDbContext.Leafs
                 .AnyAsync(l => l.BranchId == branchId && l.YouTubeVideoId == video.VideoId);
             if (exists)
-                return OperationResult<Leaf>.Fail("This YouTube video already exists in this branch.", HttpStatusCode.Conflict);
+                return OperationResult<LeafResponse>.Fail("This YouTube video already exists in this branch.", HttpStatusCode.Conflict);
 
             var nextOrder = await _appDbContext.Leafs.CountAsync(l => l.BranchId == branchId) + 1;
 
@@ -99,15 +106,16 @@ public class LeafService : ILeafService
             _appDbContext.Leafs.Add(leaf);
             await _appDbContext.SaveChangesAsync();
 
-            return OperationResult<Leaf>.Success(leaf, HttpStatusCode.Created);
+            var response = await MapToResponseAsync(leaf);
+            return OperationResult<LeafResponse>.Success(response, HttpStatusCode.Created);
         }
         catch (Exception ex)
         {
-            return OperationResult<Leaf>.Fail(ex, "Failed to create YouTube leaf.");
+            return OperationResult<LeafResponse>.Fail(ex, "Failed to create YouTube leaf.");
         }
     }
 
-    public async Task<OperationResult<Leaf>> GetLeafByIdAsync(Guid id)
+    public async Task<OperationResult<LeafResponse>> GetLeafByIdAsync(Guid id)
     {
         try
         {
@@ -116,17 +124,18 @@ public class LeafService : ILeafService
                 .FirstOrDefaultAsync(l => l.Id == id);
 
             if (leaf == null)
-                return OperationResult<Leaf>.Fail("Leaf not found.", HttpStatusCode.NotFound);
+                return OperationResult<LeafResponse>.Fail("Leaf not found.", HttpStatusCode.NotFound);
 
-            return OperationResult<Leaf>.Success(leaf, HttpStatusCode.OK);
+            var response = await MapToResponseAsync(leaf);
+            return OperationResult<LeafResponse>.Success(response);
         }
         catch (Exception ex)
         {
-            return OperationResult<Leaf>.Fail($"An error occurred while retrieving the leaf: {ex.Message}", HttpStatusCode.BadRequest);
+            return OperationResult<LeafResponse>.Fail($"An error occurred while retrieving the leaf: {ex.Message}", HttpStatusCode.BadRequest);
         }
     }
 
-    public async Task<OperationResult<List<Leaf>>> GetLeafsAsync()
+    public async Task<OperationResult<List<LeafResponse>>> GetLeafsAsync()
     {
         try
         {
@@ -135,15 +144,19 @@ public class LeafService : ILeafService
                 .OrderBy(l => l.Order)
                 .ToListAsync();
 
-            return OperationResult<List<Leaf>>.Success(leaves);
+            var responses = new List<LeafResponse>();
+            foreach (var leaf in leaves)
+                responses.Add(await MapToResponseAsync(leaf));
+
+            return OperationResult<List<LeafResponse>>.Success(responses);
         }
         catch (Exception)
         {
-            return OperationResult<List<Leaf>>.Fail("Failed to retrieve leaves.", HttpStatusCode.BadRequest);
+            return OperationResult<List<LeafResponse>>.Fail("Failed to retrieve leaves.", HttpStatusCode.BadRequest);
         }
     }
 
-    public async Task<OperationResult<List<Leaf>>> GetLeafsByBranchIdAsync(Guid branchId)
+    public async Task<OperationResult<List<LeafResponse>>> GetLeafsByBranchIdAsync(Guid branchId)
     {
         try
         {
@@ -152,42 +165,40 @@ public class LeafService : ILeafService
                 .OrderBy(l => l.Order)
                 .ToListAsync();
 
-            return OperationResult<List<Leaf>>.Success(leaves);
+            var responses = new List<LeafResponse>();
+            foreach (var leaf in leaves)
+                responses.Add(await MapToResponseAsync(leaf));
+
+            return OperationResult<List<LeafResponse>>.Success(responses);
         }
         catch (Exception ex)
         {
-            return OperationResult<List<Leaf>>.Fail($"Failed to retrieve leaves for the specified branch. {ex.Message}", HttpStatusCode.BadRequest);
+            return OperationResult<List<LeafResponse>>.Fail($"Failed to retrieve leaves for the specified branch. {ex.Message}", HttpStatusCode.BadRequest);
         }
     }
 
-    public async Task<OperationResult<Leaf>> UpdateLeafAsync(Guid id, Leaf updatedLeaf)
+    public async Task<OperationResult<LeafResponse>> UpdateLeafAsync(Guid id, Leaf updatedLeaf)
     {
         try
         {
             var existingLeaf = await _appDbContext.Leafs.FindAsync(id);
             if (existingLeaf == null)
-                return OperationResult<Leaf>.Fail("Leaf not found", HttpStatusCode.NotFound);
+                return OperationResult<LeafResponse>.Fail("Leaf not found", HttpStatusCode.NotFound);
 
-            existingLeaf.Title = updatedLeaf.Title;
+            // Update metadata
+            existingLeaf.Title = updatedLeaf.Title ?? existingLeaf.Title;
             existingLeaf.Description = updatedLeaf.Description ?? existingLeaf.Description;
             existingLeaf.Order = updatedLeaf.Order != 0 ? updatedLeaf.Order : existingLeaf.Order;
             existingLeaf.Status = updatedLeaf.Status ?? existingLeaf.Status;
 
-            if (updatedLeaf.VideoData != null && updatedLeaf.VideoData.Length > 0)
-            {
-                existingLeaf.VideoData = updatedLeaf.VideoData;
-                existingLeaf.VideoFileName = updatedLeaf.VideoFileName ?? existingLeaf.VideoFileName;
-                existingLeaf.VideoContentType = updatedLeaf.VideoContentType ?? existingLeaf.VideoContentType;
-            }
+            await _appDbContext.SaveChangesAsync();
 
-            // save changes
-                await _appDbContext.SaveChangesAsync();
-
-            return OperationResult<Leaf>.Success(existingLeaf);
+            var response = await MapToResponseAsync(existingLeaf);
+            return OperationResult<LeafResponse>.Success(response);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return OperationResult<Leaf>.Fail("An error occurred while updating the leaf.", HttpStatusCode.BadRequest);
+            return OperationResult<LeafResponse>.Fail(ex, "An error occurred while updating the leaf.");
         }
     }
 
@@ -209,5 +220,31 @@ public class LeafService : ILeafService
         {
             return OperationResult<bool>.Fail("An error occurred while deleting the leaf", HttpStatusCode.BadRequest);
         }
+    }
+
+    private async Task<LeafResponse> MapToResponseAsync(Leaf leaf)
+    {
+        string? videoUrl = null;
+        if (!string.IsNullOrEmpty(leaf.VideoBlobPath))
+        {
+            var sasResult = await _blobRepository.GetVideoUrlAsync(leaf.VideoBlobPath);
+            if (sasResult.IsSuccessful)
+                videoUrl = sasResult.Value;
+        }
+
+        return new LeafResponse
+        {
+            Id = leaf.Id,
+            BranchId = leaf.BranchId,
+            Title = leaf.Title,
+            Description = leaf.Description ?? string.Empty,
+            Order = leaf.Order,
+            Source = leaf.Source,
+            Status = leaf.Status,
+            VideoUrl = videoUrl,
+            YouTubeVideoId = leaf.YouTubeVideoId,
+            ThumbnailUrl = leaf.ThumbnailUrl,
+            CreatedAt = leaf.CreatedAt
+        };
     }
 }

@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
-using RibbitReels.Data;
 using RibbitReels.Data.Models;
 using RibbitReels.Services.Interfaces;
 using RibbitReels.Services.Implementations;
@@ -11,6 +10,7 @@ using RibbitReels.Data.Configs;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
 using RibbitReels.Services.Configurations;
+using RibbitReels.Api;
 
 DotNetEnv.Env.Load();
 
@@ -120,12 +120,10 @@ builder.Services.AddCors(options =>
     });
 });
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-Console.WriteLine($"[Program.cs] ConnectionString = {connectionString}");
-
-if (string.IsNullOrWhiteSpace(connectionString)) throw new InvalidOperationException("DefaultConnection not found");
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
+if (builder.Environment.EnvironmentName != "IntegrationTests")
+{
+    builder.Services.AddAppDbContext(builder.Configuration);
+}
 
 // Services
 builder.Services.AddScoped<IBranchService, BranchService>();
@@ -135,7 +133,7 @@ builder.Services.AddScoped<IUserBranchAssignmentService, UserBranchAssignmentSer
 builder.Services.AddScoped<ILearningProgressService, LearningProgressService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
-builder.Services.AddSingleton<AzureBlobRepository>();
+builder.Services.AddSingleton<IAzureBlobRepository, AzureBlobRepository>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

@@ -77,12 +77,13 @@ namespace RibbitReels.Data.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<string>("VideoContentType")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<string>("VideoBlobPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
-                    b.Property<byte[]>("VideoData")
-                        .HasColumnType("varbinary(max)");
+                    b.Property<string>("VideoContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("VideoFileName")
                         .HasMaxLength(255)
