@@ -97,15 +97,41 @@ resource "azurerm_container_app" "api" {
   }
 
   # App secrets
-  secret { name = "jwt-key"             value = var.jwt_key }
-  secret { name = "jwt-issuer"          value = var.jwt_issuer }
-  secret { name = "jwt-audience"        value = var.jwt_audience }
-  secret { name = "jwt-expireminutes"   value = var.jwt_expireminutes }
-  secret { name = "google-clientid"     value = var.google_clientid }
-  secret { name = "google-clientsecret" value = var.google_clientsecret }
+  secret {
+    name  = "jwt-key"
+    value = var.jwt_key
+  }
+
+  secret {
+    name  = "jwt-issuer"
+    value = var.jwt_issuer
+  }
+
+  secret {
+    name  = "jwt-audience"
+    value = var.jwt_audience
+  }
+
+  secret {
+    name  = "jwt-expireminutes"
+    value = var.jwt_expireminutes
+  }
+
+  secret {
+    name  = "google-clientid"
+    value = var.google_clientid
+  }
+
+  secret {
+    name  = "google-clientsecret"
+    value = var.google_clientsecret
+  }
 
   # Registry auth
-  secret { name = "ghcr-token" value = var.github_token }
+  secret {
+    name  = "ghcr-token"
+    value = var.github_token
+  }
 
   registry {
     server               = "ghcr.io"
