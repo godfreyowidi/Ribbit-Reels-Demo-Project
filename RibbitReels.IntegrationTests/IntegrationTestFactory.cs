@@ -19,8 +19,8 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>
 
         // fake JWT environment variables
         Environment.SetEnvironmentVariable("Jwt__Key", "oFMxyP/bOJCKqnPseJtc7bdlJhzcy+nBDCmEA5g8gFg=");
-        Environment.SetEnvironmentVariable("Jwt__Issuer", "TestIssuer");
-        Environment.SetEnvironmentVariable("Jwt__Audience", "TestAudience");
+        Environment.SetEnvironmentVariable("Jwt__Issuer", "RibbitIntegrationTestIssuer");
+        Environment.SetEnvironmentVariable("Jwt__Audience", "RibbitIntegrationTestAudience");
 
         // fake connection string to prevent Program.cs from crashing
         Environment.SetEnvironmentVariable(
